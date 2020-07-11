@@ -7,7 +7,18 @@ eye(x::Int) = [a==b ? 1.0 : 0.0 for a in 1:x, b in 1:x]   # create identity matr
 nearestRound(x::Number,i) = (x % i) > (i/2) ? x + i - x%i : x - x%i   # rounds x to the nearest multiple of i.
 nearestRound(x::AbstractArray,i) = nearestRound.(x,i)
 
-ProgressBar(X) = isequal(length(X),1) ? X : ProgressBar(X)   # fixes ProgressBar not working with single element AbstractArray.
+# ProgressBars.tqdm(X) = isequal(length(X),1) ? X : ProgressBars.tqdm(X)   # fixes ProgressBar not working with single element AbstractArray.
+
+function CartIndices_to_AbstractArray(a)
+    a = collect(a.I)[:,1:1]    # Convert from CartesianIndex to Array.
+    a = Float64.(a)
+    return a
+end
+
+function maxk!(ix, a, k; initialized=false)         # picks top k values in an array. 
+    partialsortperm!(ix, a, 1:k, rev=true, initialized=initialized)
+    @views collect(zip(ix[1:k], a[ix[1:k]]))
+end
 
 function makeHermitian!(A; inflation=1e-6)
     A[:,:] = 0.5 .* (A + A')                        # average with transpose.
