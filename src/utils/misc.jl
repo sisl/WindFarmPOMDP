@@ -9,7 +9,7 @@ nearestRound(x::AbstractArray,i) = nearestRound.(x,i)
 
 # ProgressBars.tqdm(X) = isequal(length(X),1) ? X : ProgressBars.tqdm(X)   # fixes ProgressBar not working with single element AbstractArray.
 
-function CartIndices_to_AbstractArray(a)
+function CartIndices_to_Vector(a)
     a = collect(a.I)[:,1:1]    # Convert from CartesianIndex to Array.
     a = Float64.(a)
     return a

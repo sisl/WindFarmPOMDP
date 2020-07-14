@@ -127,8 +127,6 @@ struct WindFarmState
     x_acts::AbstractArray   # actions taken so far.
     x_obs::AbstractArray    # locations observed so far.
     y_obs::AbstractArray    # values of locations observed so far.
-    # Map::Dict               # state, initially sampled from the initiial state distribution (Map: x_obs => y_obs).
-    isstate::Bool           # True: It is the running from the assumed ground truth. False: Sampled from the belief.
 end
 
 struct WindFarmBelief
@@ -137,12 +135,12 @@ struct WindFarmBelief
 end
 
 struct WindFarmBeliefUpdater <: POMDPs.Updater
-    Map::Dict               # Ground truth.
     grid_dist::Int
 end
 
-function POMDPs.update(b::WindFarmBeliefUpdater, old_b::WindFarmBelief, a::CartesianIndex{3}, obs::Int)
-    a = CartIndices_to_AbstractArray(a)
+function POMDPs.update(b::WindFarmBeliefUpdater, old_b::WindFarmBelief, a::CartesianIndex{3}, obs::Number)
+    # obs = decode(LinearDiscretizer(collect(0 : 0.25 : 10)), obs)
+    a = CartIndices_to_Vector(a)
     x_acts = hcat(old_b.x_acts, a)
 
     gpla_wf = old_b.gpla_wf
@@ -188,12 +186,14 @@ function initialize_belief(wfparams::WindFarmBeliefInitializerParams)
     return WindFarmBelief(x_acts, gpla_wf)
 end
 
-function initialize_state(b::WindFarmBelief)
+function initialize_state(wfparams::WindFarmBeliefInitializerParams)
     """ Called only once when the initial state is created. """
-    y_hat = rand(b.gpla_wf)
-    x_obs = b.gpla_wf.x
-    # Map = Dict(x => y_hat[i] for (i, x) in enumerate(eachcol(x_obs)))
-    return WindFarmState(b.x_acts, x_obs, y_hat, true)
+    Map = get_3D_data(wfparams.farm; altitudes=wfparams.altitudes)
+    # y_hat = rand(b.gpla_wf)
+    # x_obs = b.gpla_wf.x
+    x_acts = reshape(Float64[],3,0)
+    X_field, Y_field = get_dataset(Map, wfparams.altitudes, wfparams.grid_dist, wfparams.grid_dist, 1, wfparams.nx, 1, wfparams.ny)
+    return WindFarmState(x_acts, X_field, Y_field)
 end
 
 function POMDPs.rand(rng::AbstractRNG, b::WindFarmBelief)
@@ -201,5 +201,5 @@ function POMDPs.rand(rng::AbstractRNG, b::WindFarmBelief)
     y_hat = rand(b.gpla_wf)
     x_obs = b.gpla_wf.x
     # Map = Dict(x => y_hat[i] for (i, x) in enumerate(eachcol(x_obs)))
-    return WindFarmState(b.x_acts, x_obs, y_hat, false)
+    return WindFarmState(b.x_acts, x_obs, y_hat)
 end

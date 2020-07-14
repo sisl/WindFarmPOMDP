@@ -17,23 +17,25 @@ include("../src/beliefstates.jl")
 include("../src/utils/misc.jl")
 
 
-struct WindFarmPOMDP <: POMDP{WindFarmState, CartesianIndex{3}, Int}
+struct WindFarmPOMDP <: POMDP{WindFarmState, CartesianIndex{3}, Number}
     nx::Int
     ny::Int
     grid_dist::Int
     altitudes::AbstractVector
     timesteps::Int
     delta::Int          # Minimum distance between actions
-    Map::Dict           # ground truth
 end
 
 POMDPs.discount(::WindFarmPOMDP) = 0.9
-POMDPs.isterminal(p::WindFarmPOMDP, s::WindFarmState) = size(s.x_acts)[2] > p.timesteps
+POMDPs.isterminal(p::WindFarmPOMDP, s::WindFarmState) = size(s.x_acts, 2) > p.timesteps
 
-function expertPolicy(m::WindFarmPOMDP, gpla_wf::GPLA)
+function expertPolicy(gpla_wf::GPLA)
+    λ = 1.0    # TODO: Coefficient for estimating profit.
     no_of_turbines = 10   # TODO: Change this?
+    ground_truth = s0
 
-    X_field, Y_field = get_dataset(m.Map, m.altitudes, m.grid_dist, m.grid_dist, 1, m.nx, 1, m.ny)
+    # X_field, Y_field = get_dataset(Map, m.altitudes, m.grid_dist, m.grid_dist, 1, m.nx, 1, m.ny)
+    X_field = s0.x_obs
 
     μ, σ² = GaussianProcesses.predict_f(gpla_wf, X_field)
     σ = sqrt.(σ²)
@@ -42,27 +44,19 @@ function expertPolicy(m::WindFarmPOMDP, gpla_wf::GPLA)
     z_value = 1.645   # chosen: 90 percent confidence interval
     LCB = μ - z_value / sqrt(N) * σ
     
-    sort!(LCB, dims=1, rev=true)
-    expected_profit = sum(LCB[1:no_of_turbines] .^3)
+    best_vals = partialsortperm(vec(LCB), 1:no_of_turbines, rev=true)
+    expected_profit = λ * sum(μ[best_vals] .^3)
     
-    # @show expected_profit
-    return expected_profit
-end
-
-function expertPolicy(sp::WindFarmState)
-    no_of_turbines = 10   # TODO: Change this?
-
-    μ = sp.y_obs
-    
-    sort!(μ, rev=true)
-    expected_profit = sum(μ[1:no_of_turbines] .^3)
-
+    # @show sort(vec(μ), rev=true)[1:10]
+    # @show μ[best_vals]
+    # @show σ[best_vals]
+    @show expected_profit
     return expected_profit
 end
 
 function get_tower_cost(a)
     height = a[end]
-    height < 90 ? 92600 : 116000 
+    height < 90 ? 92600.0/116000.0 : 1.0 
 end
 
 function get_GPLA_for_gen(s::WindFarmState, wfparams::WindFarmBeliefInitializerParams)
@@ -78,22 +72,18 @@ end
 # Obs: Int
 function POMDPs.gen(m::WindFarmPOMDP, s::WindFarmState, a::CartesianIndex{3}, rng::AbstractRNG)
 
-    a = CartIndices_to_AbstractArray(a)
+    # Transform the action location to Vector
+    a = CartIndices_to_Vector(a)
+
+    # Get observation
+    gpla_wf = get_GPLA_for_gen(s, wfparams)
+    # o, _ = predict_f(gpla_wf, a)
+    o = rand(gpla_wf, a)
+    o = o[1]
+    @show o
     @show a
-    @show s.y_obs[1]
-    @show size(s.x_acts)
-    @show s.isstate
-
-    if s.isstate    # the entered 's' is s0 and onward.
-        o = get_Y_from_farm_location(a, m.Map, m.grid_dist)
-
-    else    # the entered 's' is sampled from b0 and onward.     
-        gpla_wf = get_GPLA_for_gen(s, wfparams)
-        o = rand(gpla_wf, a)
-    end
-
     
-    # Wrap next state
+    # Get next state
     if isempty(s.x_acts)
         sp_x_acts = a
     else
@@ -101,23 +91,17 @@ function POMDPs.gen(m::WindFarmPOMDP, s::WindFarmState, a::CartesianIndex{3}, rn
     end
     sp_x_obs = hcat(s.x_obs, a)
     sp_y_obs = vcat(s.y_obs, o)
-    sp = WindFarmState(sp_x_acts, sp_x_obs, sp_y_obs, s.isstate)
-    
+    sp = WindFarmState(sp_x_acts, sp_x_obs, sp_y_obs)
 
     # Discretize observation to avoid shallow trees
-    o = encode(LinearDiscretizer(collect(0 : 0.25 : 10)), o)
-    o = o[1]
+    # o = encode(LinearDiscretizer(collect(0 : 0.25 : 10)), o)  ## TODO: Use discretized FLoat instead
+    o = round(o * 2)/2   # rounds to nearest 0.5
     
+    # Get reward
+    GaussianProcesses.fit!(gpla_wf, sp_x_obs, sp_y_obs) 
+    r = expertPolicy(gpla_wf) - get_tower_cost(a)
 
-    # Estimate reward from expert policy
-    if s.isstate    # the entered 's' is s0 and onward.
-        r = expertPolicy(sp) - get_tower_cost(a)
-    else    # the entered 's' is sampled from b0 and onward.    
-        GaussianProcesses.fit!(gpla_wf, sp_x_obs, sp_y_obs) 
-        r = expertPolicy(m, gpla_wf) - get_tower_cost(a)
-    end
-    
-    @show r
+    # @show a, o, size(s.x_acts, 2)
     return (sp = sp, o = o, r = r)
 end
 
