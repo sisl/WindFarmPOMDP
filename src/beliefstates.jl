@@ -150,6 +150,7 @@ function POMDPs.update(b::WindFarmBeliefUpdater, old_b::WindFarmBelief, a::Carte
     y_obs = vcat(y_obs, obs)
     GaussianProcesses.fit!(gpla_wf, x_obs, y_obs)
 
+    println("Belief Updated!")
     return WindFarmBelief(x_acts, gpla_wf)
 end
 

@@ -6,6 +6,8 @@ using Distributions
 using Discretizers
 using Parameters
 using ProgressBars
+using Dates
+using Plots
 
 # windGP scripts
 include("../../windGP/src/dataparser_GWA.jl")
@@ -50,7 +52,7 @@ function expertPolicy(gpla_wf::GPLA)
     # @show sort(vec(μ), rev=true)[1:10]
     # @show μ[best_vals]
     # @show σ[best_vals]
-    @show expected_profit
+    # @show expected_profit
     return expected_profit
 end
 
@@ -80,8 +82,7 @@ function POMDPs.gen(m::WindFarmPOMDP, s::WindFarmState, a::CartesianIndex{3}, rn
     # o, _ = predict_f(gpla_wf, a)
     o = rand(gpla_wf, a)
     o = o[1]
-    @show o
-    @show a
+
     
     # Get next state
     if isempty(s.x_acts)
@@ -101,11 +102,22 @@ function POMDPs.gen(m::WindFarmPOMDP, s::WindFarmState, a::CartesianIndex{3}, rn
     GaussianProcesses.fit!(gpla_wf, sp_x_obs, sp_y_obs) 
     r = expertPolicy(gpla_wf) - get_tower_cost(a)
 
+    # @show o
+    # @show a
     # @show a, o, size(s.x_acts, 2)
     return (sp = sp, o = o, r = r)
 end
 
+# P(o|s,a,s')
+function POMDPModelTools.obs_weight(p::WindFarmPOMDP, s::WindFarmState, a::CartesianIndex{3}, sp::WindFarmState, o::Number)
+    a = CartIndices_to_Vector(a)
 
+    gpla_wf = get_GPLA_for_gen(s, wfparams)
+    μ, σ² = GaussianProcesses.predict_f(gpla_wf, a)
+    σ = sqrt.(σ²)
+    
+    return Distributions.pdf(Normal(μ..., σ...), o)
+end
 
 
 ############################
@@ -142,4 +154,43 @@ function POMDPs.actions(p::WindFarmPOMDP, b::WindFarmBelief)
     setdiff!(all_actions_Set, x_acts_Set)
 
     return collect(all_actions_Set)
+end
+
+function plot_WindFarmPOMDP_policy!(wfparams::WindFarmBeliefInitializerParams, actions_history::AbstractArray)
+    nx, ny = wfparams.nx, wfparams.ny
+    Map = get_3D_data(wfparams.farm; altitudes=wfparams.altitudes)
+    actions_history = CartIndices_to_Vector.(actions_history)
+    
+    dir = string(Dates.now())
+    mkdir(dir)
+
+
+    b0 = initialize_belief(wfparams)
+    gpla_wf = get_GPLA_for_gen(rand(b0), wfparams)
+    
+    
+    for h in wfparams.altitudes
+
+        a_in_h = reshape(Float64[],2,0)
+        for a in actions_history
+            if a[end]==h
+                a_in_h = hcat(a_in_h, a[1:2] / wfparams.grid_dist)
+            end
+        end
+        
+        X_field, Y_field = get_dataset(Map, [h], wfparams.grid_dist, wfparams.grid_dist, 1, wfparams.nx, 1, wfparams.ny)
+        p = Plots.heatmap(reshape(Y_field, (nx,ny)), title="Wind Farm Sensor Locations Chosen, h = $(h)m")
+        Plots.scatter!(a_in_h[1,:], a_in_h[2,:], legend=false, color=:white)
+        Plots.savefig(p, "./$dir/Plot_$h")
+    
+
+        μ, σ² = GaussianProcesses.predict_f(gpla_wf, X_field)
+        σ = sqrt.(σ²)
+
+        p2 = Plots.heatmap(reshape(σ, (nx,ny)), title="Wind Farm Initial Belief Variance, h = $(h)m")
+        Plots.scatter!(a_in_h[1,:], a_in_h[2,:], legend=false, color=:white)
+        Plots.savefig(p2, "./$dir/Plot2_$h")
+
+    end
+
 end
