@@ -79,7 +79,7 @@ function POMDPs.gen(m::WindFarmPOMDP, s::WindFarmState, a::CartesianIndex{3}, rn
 
     # Get observation
     gpla_wf = get_GPLA_for_gen(s, wfparams)
-    # o, _ = predict_f(gpla_wf, a)     # TODO: Change this back to the line below.
+    # o, _ = predict_f(gpla_wf, a)
     o = rand(gpla_wf, a)
     o = o[1]
 
@@ -183,13 +183,17 @@ function plot_WindFarmPOMDP_policy!(wfparams::WindFarmBeliefInitializerParams, a
         Plots.scatter!(a_in_h[2,:], a_in_h[1,:], legend=false, color=:white)  # Notice that the row and col of `a_in_h` is reversed.
         Plots.savefig(p, "./$dir/Plot_$h")
     
-
+        # Plots of initial belief below.
         μ, σ² = GaussianProcesses.predict_f(gpla_wf, X_field)
         σ = sqrt.(σ²)
 
         p2 = Plots.heatmap(reshape(σ, (nx,ny)), title="Wind Farm Initial Belief Variance, h = $(h)m")
-        Plots.scatter!(a_in_h[1,:], a_in_h[2,:], legend=false, color=:white)
+        Plots.scatter!(a_in_h[2,:], a_in_h[1,:], legend=false, color=:white)  # Notice that the row and col of `a_in_h` is reversed.
         Plots.savefig(p2, "./$dir/Plot2_$h")
+
+        p3 = Plots.heatmap(reshape(μ, (nx,ny)), title="Wind Farm Initial Belief Mean, h = $(h)m")
+        Plots.scatter!(a_in_h[2,:], a_in_h[1,:], legend=false, color=:white)  # Notice that the row and col of `a_in_h` is reversed.
+        Plots.savefig(p3, "./$dir/Plot3_$h")
 
     end
     println("### Policy Plots Saved to $dir ###")

@@ -37,11 +37,12 @@ function rolloutExpertPolicy(gpla_wf_rollout::GPLA, legal_actions::AbstractArray
 
     μ, σ² = GaussianProcesses.predict_f(gpla_wf_rollout, legal_actions)
     σ = sqrt.(σ²)
-    N = length(σ)
+    # N = length(σ)
+    N = length(gpla_wf_rollout.y)
 
-    # z_value = 1.645   # chosen: 90 percent confidence interval
-    # UCB = dropdims(μ, dims=2) + z_value / sqrt(N) * dropdims(σ, dims=2)
-    UCB = dropdims(μ, dims=2)
+    z_value = 1.645   # chosen: 90 percent confidence interval
+    UCB = dropdims(μ, dims=2) + z_value / sqrt(N) * dropdims(σ, dims=2)
+    # UCB = dropdims(μ, dims=2)
 
     
     best_vals = partialsortperm(vec(UCB), 1:no_of_turbines, rev=true)
