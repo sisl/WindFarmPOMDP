@@ -79,7 +79,7 @@ function POMDPs.gen(m::WindFarmPOMDP, s::WindFarmState, a::CartesianIndex{3}, rn
 
     # Get observation
     gpla_wf = get_GPLA_for_gen(s, wfparams)
-    # o, _ = predict_f(gpla_wf, a)
+    # o, _ = predict_f(gpla_wf, a)     # TODO: Change this back to the line below.
     o = rand(gpla_wf, a)
     o = o[1]
 
@@ -140,7 +140,7 @@ function POMDPs.actions(p::WindFarmPOMDP, s::WindFarmState)
     "Permitted actions, after having taken previous hallucination actions in the tree."
 
     all_actions_Set = Set(POMDPs.actions(p))
-    x_acts_Set = Set(s.x_acts)
+    x_acts_Set = Set(Vector_to_CartIndices.(eachcol(s.x_acts)))
     setdiff!(all_actions_Set, x_acts_Set)
 
     return collect(all_actions_Set)
@@ -150,37 +150,37 @@ function POMDPs.actions(p::WindFarmPOMDP, b::WindFarmBelief)
     "Permitted actions, after having taken an actual action, thereby updating the belief."
 
     all_actions_Set = Set(POMDPs.actions(p))
-    x_acts_Set = Set(b.x_acts)
+    x_acts_Set = Set(Vector_to_CartIndices.(eachcol(b.x_acts)))
     setdiff!(all_actions_Set, x_acts_Set)
 
     return collect(all_actions_Set)
 end
 
 function plot_WindFarmPOMDP_policy!(wfparams::WindFarmBeliefInitializerParams, actions_history::AbstractArray)
+    println("### Creating Policy Plots ###")
     nx, ny = wfparams.nx, wfparams.ny
     Map = get_3D_data(wfparams.farm; altitudes=wfparams.altitudes)
     actions_history = CartIndices_to_Vector.(actions_history)
     
-    dir = string(Dates.now())
+    !isdir("Figures") ? mkdir("Figures") : nothing
+    dir = string("Figures/", Dates.now())
     mkdir(dir)
-
 
     b0 = initialize_belief(wfparams)
     gpla_wf = get_GPLA_for_gen(rand(b0), wfparams)
-    
     
     for h in wfparams.altitudes
 
         a_in_h = reshape(Float64[],2,0)
         for a in actions_history
             if a[end]==h
-                a_in_h = hcat(a_in_h, a[1:2] / wfparams.grid_dist)
+                a_in_h = hcat(a_in_h, a[1:2] / wfparams.grid_dist + [1,1])    # [1,1] is added because locations were 0-based indexed.
             end
         end
         
         X_field, Y_field = get_dataset(Map, [h], wfparams.grid_dist, wfparams.grid_dist, 1, wfparams.nx, 1, wfparams.ny)
         p = Plots.heatmap(reshape(Y_field, (nx,ny)), title="Wind Farm Sensor Locations Chosen, h = $(h)m")
-        Plots.scatter!(a_in_h[1,:], a_in_h[2,:], legend=false, color=:white)
+        Plots.scatter!(a_in_h[2,:], a_in_h[1,:], legend=false, color=:white)  # Notice that the row and col of `a_in_h` is reversed.
         Plots.savefig(p, "./$dir/Plot_$h")
     
 
@@ -192,5 +192,6 @@ function plot_WindFarmPOMDP_policy!(wfparams::WindFarmBeliefInitializerParams, a
         Plots.savefig(p2, "./$dir/Plot2_$h")
 
     end
-
+    println("### Policy Plots Saved to $dir ###")
+    return nothing
 end

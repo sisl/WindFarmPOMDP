@@ -9,11 +9,18 @@ nearestRound(x::AbstractArray,i) = nearestRound.(x,i)
 
 # ProgressBars.tqdm(X) = isequal(length(X),1) ? X : ProgressBars.tqdm(X)   # fixes ProgressBar not working with single element AbstractArray.
 
-function CartIndices_to_Vector(a)
-    a = collect(a.I)[:,1:1]    # Convert from CartesianIndex to Array.
+function CartIndices_to_Vector(a::CartesianIndex)
+    a = collect(a.I)[:,1:1]    # Convert from CartesianIndex to Vector.
     a = Float64.(a)
     return a
 end
+
+function CartIndices_to_Array(A::Array{CartesianIndex{N},T} where {N,T})
+    A = CartIndices_to_Vector.(A)
+    return transform4GPjl(A)
+end
+
+Vector_to_CartIndices(a) = CartesianIndex(Int.(a)...)
 
 function maxk!(ix, a, k; initialized=false)         # picks top k values in an array. 
     partialsortperm!(ix, a, 1:k, rev=true, initialized=initialized)
@@ -33,7 +40,17 @@ function dropBelowThreshold!(A; threshold=eps(Float64))
     end 
 end
 
-function transform4GPjl(X)
+function transform4GPjl(a::AbstractArray{Float64,1})
+    """ Transform single location """
+    a_gp = Array{Float64,2}(undef, 3, 1)
+    for (idx,val) in enumerate(a)
+        a_gp[idx] = val
+    end
+    return a_gp
+end
+
+function transform4GPjl(X::AbstractArray)
+    """ Transform AbstractArray of locations """
     X_gp = Array{Float64,2}(undef, 3, length(X))
     for idx in 1:size(X,1)
         X_gp[:,idx] = X[idx]

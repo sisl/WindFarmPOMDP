@@ -9,7 +9,7 @@ include("../src/windfarm_expertpolicy.jl")
 # Construct POMDP
 no_of_sensors = 5
 delta = 220
-wfparams = WindFarmBeliefInitializerParams(nx=20,ny=20)
+wfparams = WindFarmBeliefInitializerParams(nx=20,ny=20,grid_dist_obs=220)
 pomdp = WindFarmPOMDP(wfparams.nx, wfparams.ny, wfparams.grid_dist, wfparams.altitudes, no_of_sensors, delta)
 
 # Get initial belief distribution (sparse version of GWA data) and initial state
@@ -20,27 +20,15 @@ s0 = initialize_state(wfparams)
 up = WindFarmBeliefUpdater(wfparams.grid_dist)
 
 # Define Solver
-rollout_policy = WindFarmExpertPolicy(pomdp)
-tree_queries = 10
-# solver = DESPOTSolver(bounds=IndependentBounds(DefaultPolicyLB(RandomSolver()), 0.0, check_terminal=true, consistency_fix_thresh=0.1))
-# solver = POMCPSolver(tree_queries=tree_queries)
-solver = POMCPOWSolver(tree_queries=tree_queries,
-                       check_repeat_obs=true, 
-                       check_repeat_act=true, 
-                       k_action=2.0, 
-                       alpha_action=0.5,
-                       estimate_value=POMCPOW.RolloutEstimator(rollout_policy))
-
-
-planner = solve(solver, pomdp)
-
+policy = WindFarmExpertPolicy(pomdp)
 
 
 println("### Starting Stepthrough ###")
 global actions_history = []
 global obs_history = []
 global rewards_history = []
-for (s, a, r, o, b, t) in stepthrough(pomdp, planner, up, b0, s0, "s,a,r,o,b,t", max_steps=no_of_sensors)
+global belief_history = []
+for (s, a, r, o, b, t, bp) in stepthrough(pomdp, policy, up, b0, s0, "s,a,r,o,b,t,bp", max_steps=no_of_sensors)
     # @show s
     @show a
     @show o
@@ -49,6 +37,7 @@ for (s, a, r, o, b, t) in stepthrough(pomdp, planner, up, b0, s0, "s,a,r,o,b,t",
     push!(actions_history, a)
     push!(obs_history, o)
     push!(rewards_history, r)
+    push!(belief_history, bp)
 end
 
 plot_WindFarmPOMDP_policy!(wfparams, actions_history)
