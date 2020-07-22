@@ -13,7 +13,7 @@ using Main.BOMCP
 
 # Construct POMDP
 no_of_sensors = 5
-delta = 220
+delta = 220 * 4
 wfparams = WindFarmBeliefInitializerParams(nx=20,ny=20, grid_dist_obs = 220)
 pomdp = WindFarmPOMDP(wfparams.nx, wfparams.ny, wfparams.grid_dist, wfparams.altitudes, no_of_sensors, delta)
 

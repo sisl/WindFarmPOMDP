@@ -127,9 +127,9 @@ end
 ############################
 
 function POMDPs.actions(p::WindFarmPOMDP)
-    "All possible actions, regardless of history."
+    """ All possible actions, regardless of history. """
     permitted_altitudes = p.altitudes       # TODO: Change this?
-    permitted_xy_dists = p.delta            # TODO: Change this?
+    permitted_xy_dists = p.grid_dist        # TODO: Change this?
 
     x_ranges = 0 : permitted_xy_dists : p.grid_dist * p.nx-1
     y_ranges = 0 : permitted_xy_dists : p.grid_dist * p.ny-1
@@ -139,23 +139,36 @@ function POMDPs.actions(p::WindFarmPOMDP)
 end
 
 function POMDPs.actions(p::WindFarmPOMDP, s::WindFarmState)
-    "Permitted actions, after having taken previous hallucination actions in the tree."
+    """ Permitted actions, after having taken previous hallucination actions in the tree. """
 
     all_actions_Set = Set(POMDPs.actions(p))
-    x_acts_Set = Set(Vector_to_CartIndices.(eachcol(s.x_acts)))
-    setdiff!(all_actions_Set, x_acts_Set)
 
+    x_acts_cartidx = Vector_to_CartIndices.(eachcol(s.x_acts))
+    expanded = expand_action_to_limits.(x_acts_cartidx, Ref(p.altitudes), Ref(p.grid_dist), Ref(p.delta))
+
+    setdiff!(all_actions_Set, Set(vcat(expanded...)))
     return collect(all_actions_Set)
 end
 
 function POMDPs.actions(p::WindFarmPOMDP, b::WindFarmBelief)
-    "Permitted actions, after having taken an actual action, thereby updating the belief."
+    """ Permitted actions, after having taken an actual action, thereby updating the belief. """
 
     all_actions_Set = Set(POMDPs.actions(p))
-    x_acts_Set = Set(Vector_to_CartIndices.(eachcol(b.x_acts)))
-    setdiff!(all_actions_Set, x_acts_Set)
+    
+    x_acts_cartidx = Vector_to_CartIndices.(eachcol(b.x_acts))
+    expanded = expand_action_to_limits.(x_acts_cartidx, Ref(p.altitudes), Ref(p.grid_dist), Ref(p.delta))
 
+    setdiff!(all_actions_Set, Set(vcat(expanded...)))
     return collect(all_actions_Set)
+end
+
+expand_action_to_altitudes(a::CartesianIndex, altitudes::AbstractVector) = [CartesianIndex(a[1], a[2], h) for h in altitudes]
+
+function expand_action_to_limits(a::CartesianIndex, altitudes, grid_dist, delta)
+    """ Creates an array of blocked locations (considering both altitude and delta limits), given an action. """
+    a1, a2 = a[1], a[2]
+    block = [CartesianIndex(a1+δ1, a2+δ2, h) for h in altitudes for δ1 in -delta:grid_dist:delta for δ2 in -delta:grid_dist:delta]
+    return block
 end
 
 function plot_WindFarmPOMDP_policy!(script_id::Symbol, wfparams::WindFarmBeliefInitializerParams, actions_history::AbstractArray, rewards_history::AbstractArray, b0::WindFarmBelief)
