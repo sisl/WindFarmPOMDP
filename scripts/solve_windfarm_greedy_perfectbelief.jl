@@ -4,23 +4,23 @@ using BasicPOMCP, ARDESPOT, POMCPOW
 
 include("../src/windfarmpomdp.jl")
 include("../src/beliefstates.jl")
-include("../src/windfarm_expertpolicy.jl")
+include("../src/windfarm_expertpolicies.jl")
 
 # Construct POMDP
 no_of_sensors = 5
 delta = 220
-wfparams = WindFarmBeliefInitializerParams(nx=20,ny=20)
+wfparams = WindFarmBeliefInitializerParams(nx=20,ny=20, grid_dist_obs = 220)
 pomdp = WindFarmPOMDP(wfparams.nx, wfparams.ny, wfparams.grid_dist, wfparams.altitudes, no_of_sensors, delta)
 
 # Get initial belief distribution (sparse version of GWA data) and initial state
-b0 = initialize_belief(wfparams)
+b0 = initialize_belief_sparse(wfparams)
 s0 = initialize_state(wfparams)
 
 # Construct Belief Updater
 up = WindFarmBeliefUpdater(wfparams.grid_dist)
 
 # Define Solver
-policy = WindFarmExpertPolicy(pomdp)
+policy = WindFarmGreedyPolicy(pomdp)
 
 
 println("### Starting Stepthrough ###")
@@ -40,7 +40,7 @@ for (s, a, r, o, b, t, bp) in stepthrough(pomdp, policy, up, b0, s0, "s,a,r,o,b,
     push!(belief_history, bp)
 end
 
-plot_WindFarmPOMDP_policy!(wfparams, actions_history)
+plot_WindFarmPOMDP_policy!(wfparams, actions_history, rewards_history, b0)
 
 # @time _, info = action_info(planner, b0, tree_in_info=true)
 # @time _, info = action_info(planner, b0, tree_in_info=true)

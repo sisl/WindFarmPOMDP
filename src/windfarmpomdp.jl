@@ -6,6 +6,7 @@ using Distributions
 using Discretizers
 using Parameters
 using ProgressBars
+using DelimitedFiles
 using Dates
 using Plots
 
@@ -31,7 +32,7 @@ end
 POMDPs.discount(::WindFarmPOMDP) = 0.9
 POMDPs.isterminal(p::WindFarmPOMDP, s::WindFarmState) = size(s.x_acts, 2) > p.timesteps
 
-function expertPolicy(gpla_wf::GPLA)
+function turbine_layout_heuristic(gpla_wf::GPLA)
     λ = 1.0    # TODO: Coefficient for estimating profit.
     no_of_turbines = 10   # TODO: Change this?
     ground_truth = s0
@@ -41,7 +42,8 @@ function expertPolicy(gpla_wf::GPLA)
 
     μ, σ² = GaussianProcesses.predict_f(gpla_wf, X_field)
     σ = sqrt.(σ²)
-    N = length(σ)
+    # N = length(σ)
+    N = length(gpla_wf.y)
 
     z_value = 1.645   # chosen: 90 percent confidence interval
     LCB = μ - z_value / sqrt(N) * σ
@@ -100,7 +102,7 @@ function POMDPs.gen(m::WindFarmPOMDP, s::WindFarmState, a::CartesianIndex{3}, rn
     
     # Get reward
     GaussianProcesses.fit!(gpla_wf, sp_x_obs, sp_y_obs) 
-    r = expertPolicy(gpla_wf) - get_tower_cost(a)
+    r = turbine_layout_heuristic(gpla_wf) - get_tower_cost(a)
 
     # @show o
     # @show a
@@ -156,7 +158,7 @@ function POMDPs.actions(p::WindFarmPOMDP, b::WindFarmBelief)
     return collect(all_actions_Set)
 end
 
-function plot_WindFarmPOMDP_policy!(wfparams::WindFarmBeliefInitializerParams, actions_history::AbstractArray)
+function plot_WindFarmPOMDP_policy!(wfparams::WindFarmBeliefInitializerParams, actions_history::AbstractArray, rewards_history::AbstractArray, b0::WindFarmBelief)
     println("### Creating Policy Plots ###")
     nx, ny = wfparams.nx, wfparams.ny
     Map = get_3D_data(wfparams.farm; altitudes=wfparams.altitudes)
@@ -166,8 +168,7 @@ function plot_WindFarmPOMDP_policy!(wfparams::WindFarmBeliefInitializerParams, a
     dir = string("Figures/", Dates.now())
     mkdir(dir)
 
-    b0 = initialize_belief(wfparams)
-    gpla_wf = get_GPLA_for_gen(rand(b0), wfparams)
+    gpla_wf = b0.gpla_wf
     
     for h in wfparams.altitudes
 
@@ -197,5 +198,15 @@ function plot_WindFarmPOMDP_policy!(wfparams::WindFarmBeliefInitializerParams, a
 
     end
     println("### Policy Plots Saved to $dir ###")
+
+    save_rewards_to_disk(rewards_history, "./$dir/rewards.txt")
+    return nothing
+end
+
+function save_rewards_to_disk(rewards_history::AbstractArray, savename::String)
+    open(savename, "a") do io
+        writedlm(io, ["History: ", rewards_history..., ""])
+        writedlm(io, ["Total: ", sum(rewards_history)])
+    end
     return nothing
 end
