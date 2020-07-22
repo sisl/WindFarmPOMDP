@@ -19,7 +19,7 @@ b0 = initialize_belief_noisy(wfparams, windNoise)
 s0 = initialize_state(wfparams)
 
 # Construct Belief Updater
-up = WindFarmBeliefUpdater(wfparams.grid_dist)
+up = WindFarmBeliefUpdater(wfparams.altitudes, wfparams.grid_dist)
 
 # Define Solver
 policy = WindFarmGreedyPolicy(pomdp)
@@ -31,7 +31,8 @@ global obs_history = []
 global rewards_history = []
 global belief_history = []
 for (s, a, r, o, b, t, bp) in stepthrough(pomdp, policy, up, b0, s0, "s,a,r,o,b,t,bp", max_steps=no_of_sensors)
-    # @show s
+    @show s.x_acts
+
     @show a
     @show o
     @show r

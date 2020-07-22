@@ -70,6 +70,7 @@ Constructor:
 """
 
 struct WindFarmRolloutUpdater <: POMDPs.Updater
+    altitudes::AbstractVector
     grid_dist::Int
 end
 
@@ -79,7 +80,7 @@ mutable struct WindFarmRolloutPolicy{RNG<:AbstractRNG, P<:Union{POMDP,MDP}, U<:U
     updater::U # set this to use a custom updater, by default it will be a void updater
 end
 # The constructor below should be used to create the policy so that the action space is initialized correctly
-WindFarmRolloutPolicy(problem::Union{POMDP,MDP}; rng=Random.GLOBAL_RNG, updater=WindFarmRolloutUpdater(problem.grid_dist)) = WindFarmRolloutPolicy(rng, problem, updater)
+WindFarmRolloutPolicy(problem::Union{POMDP,MDP}; rng=Random.GLOBAL_RNG, updater=WindFarmRolloutUpdater(problem.altitudes, problem.grid_dist)) = WindFarmRolloutPolicy(rng, problem, updater)
 
 
 function rolloutExpertPolicy(gpla_wf_rollout::GPLA, legal_actions::AbstractArray)
@@ -112,9 +113,12 @@ function POMDPPolicies.action(policy::WindFarmRolloutPolicy, b::WindFarmBelief)
     return Vector_to_CartIndices(policy_action)
 end
 
-function POMDPs.update(bu::WindFarmRolloutUpdater, old_b::WindFarmBelief, a::CartesianIndex{3}, obs::Number)
-    a = CartIndices_to_Vector(a)
-    x_acts = hcat(old_b.x_acts, a)
+function POMDPs.update(bu::WindFarmRolloutUpdater, old_b::WindFarmBelief, a::CartesianIndex{3}, obs::AbstractVector)
+    a0 = CartIndices_to_Vector(a)
+    a = expand_action_to_altitudes(a, bu.altitudes)
+    a = CartIndices_to_Array(a)
+
+    x_acts = hcat(old_b.x_acts, a0)
 
     gpla_wf = deepcopy(old_b.gpla_wf)
     x_obs, y_obs = gpla_wf.x, gpla_wf.y
@@ -126,6 +130,7 @@ function POMDPs.update(bu::WindFarmRolloutUpdater, old_b::WindFarmBelief, a::Car
     # println("Rollout Belief Updated!")
     return WindFarmBelief(x_acts, gpla_wf)
 end
+
 
 ## convenience functions ##
 POMDPs.updater(policy::WindFarmRolloutPolicy) = policy.updater

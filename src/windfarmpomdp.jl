@@ -20,7 +20,7 @@ include("../src/beliefstates.jl")
 include("../src/utils/misc.jl")
 
 
-struct WindFarmPOMDP <: POMDP{WindFarmState, CartesianIndex{3}, Number}
+struct WindFarmPOMDP <: POMDP{WindFarmState, CartesianIndex{3}, AbstractVector}
     nx::Int
     ny::Int
     grid_dist::Int
@@ -74,23 +74,27 @@ end
 # State: WindFarmState
 # Action: CartesianIndex{3}
 # Obs: Int
-function POMDPs.gen(m::WindFarmPOMDP, s::WindFarmState, a::CartesianIndex{3}, rng::AbstractRNG)
+function POMDPs.gen(m::WindFarmPOMDP, s::WindFarmState, a0::CartesianIndex{3}, rng::AbstractRNG)
 
     # Transform the action location to Vector
-    a = CartIndices_to_Vector(a)
-
+    a = expand_action_to_altitudes(a0, m.altitudes)
+    a = CartIndices_to_Array(a)
+    
     # Get observation
     gpla_wf = get_GPLA_for_gen(s, wfparams)
     # o, _ = predict_f(gpla_wf, a)
     o = rand(gpla_wf, a)
-    o = o[1]
-
+    
+    # Seperate the action's altitude and the observation at that altitude.
+    a0_idx = findfirst(x -> x == a0[3], m.altitudes)
+    a0 = a[:, a0_idx:a0_idx]
+    o0 = o[a0_idx]
     
     # Get next state
     if isempty(s.x_acts)
-        sp_x_acts = a
+        sp_x_acts = a0
     else
-        sp_x_acts = hcat(s.x_acts, a)
+        sp_x_acts = hcat(s.x_acts, a0)
     end
     sp_x_obs = hcat(s.x_obs, a)
     sp_y_obs = vcat(s.y_obs, o)
@@ -98,11 +102,11 @@ function POMDPs.gen(m::WindFarmPOMDP, s::WindFarmState, a::CartesianIndex{3}, rn
 
     # Discretize observation to avoid shallow trees
     # o = encode(LinearDiscretizer(collect(0 : 0.25 : 10)), o)  ## TODO: Use discretized FLoat instead
-    o = round(o * 2)/2   # rounds to nearest 0.5
+    o = round.(o * 2)/2   # rounds to nearest 0.5
     
     # Get reward
     GaussianProcesses.fit!(gpla_wf, sp_x_obs, sp_y_obs) 
-    r = turbine_layout_heuristic(gpla_wf) - get_tower_cost(a)
+    r = turbine_layout_heuristic(gpla_wf) - get_tower_cost(a0)
 
     # @show o
     # @show a
@@ -111,14 +115,14 @@ function POMDPs.gen(m::WindFarmPOMDP, s::WindFarmState, a::CartesianIndex{3}, rn
 end
 
 # P(o|s,a,s')
-function POMDPModelTools.obs_weight(p::WindFarmPOMDP, s::WindFarmState, a::CartesianIndex{3}, sp::WindFarmState, o::Number)
+function POMDPModelTools.obs_weight(p::WindFarmPOMDP, s::WindFarmState, a::CartesianIndex{3}, sp::WindFarmState, o::AbstractVector)
     a = CartIndices_to_Vector(a)
 
     gpla_wf = get_GPLA_for_gen(s, wfparams)
     μ, σ² = GaussianProcesses.predict_f(gpla_wf, a)
     σ = sqrt.(σ²)
     
-    return Distributions.pdf(Normal(μ..., σ...), o)
+    return Distributions.pdf(Normal(μ..., σ...), average(o))
 end
 
 
@@ -163,6 +167,7 @@ function POMDPs.actions(p::WindFarmPOMDP, b::WindFarmBelief)
 end
 
 expand_action_to_altitudes(a::CartesianIndex, altitudes::AbstractVector) = [CartesianIndex(a[1], a[2], h) for h in altitudes]
+expand_action_to_other_altitudes(a::CartesianIndex, altitudes::AbstractVector) = [CartesianIndex(a[1], a[2], h) for h in setdiff(Set(altitudes),a[3])]
 
 function expand_action_to_limits(a::CartesianIndex, altitudes, grid_dist, delta)
     """ Creates an array of blocked locations (considering both altitude and delta limits), given an action. """

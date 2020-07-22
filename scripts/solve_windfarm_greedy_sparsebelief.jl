@@ -17,7 +17,7 @@ b0 = initialize_belief_sparse(wfparams)
 s0 = initialize_state(wfparams)
 
 # Construct Belief Updater
-up = WindFarmBeliefUpdater(wfparams.grid_dist)
+up = WindFarmBeliefUpdater(wfparams.altitudes, wfparams.grid_dist)
 
 # Define Solver
 policy = WindFarmGreedyPolicy(pomdp)

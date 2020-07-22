@@ -10,13 +10,16 @@ struct WindFarmBelief
 end
 
 struct WindFarmBeliefUpdater <: POMDPs.Updater
+    altitudes::AbstractVector
     grid_dist::Int
 end
 
-function POMDPs.update(bu::WindFarmBeliefUpdater, old_b::WindFarmBelief, a::CartesianIndex{3}, obs::Number)
-    # obs = decode(LinearDiscretizer(collect(0 : 0.25 : 10)), obs)
-    a = CartIndices_to_Vector(a)
-    x_acts = hcat(old_b.x_acts, a)
+function POMDPs.update(bu::WindFarmBeliefUpdater, old_b::WindFarmBelief, a::CartesianIndex{3}, obs::AbstractVector)
+    a0 = CartIndices_to_Vector(a)
+    a = expand_action_to_altitudes(a, bu.altitudes)
+    a = CartIndices_to_Array(a)
+
+    x_acts = hcat(old_b.x_acts, a0)
 
     gpla_wf = deepcopy(old_b.gpla_wf)
     x_obs, y_obs = gpla_wf.x, gpla_wf.y
