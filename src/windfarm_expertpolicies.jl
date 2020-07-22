@@ -1,5 +1,5 @@
-### Expert Policies ###
 using StatsBase
+
 """
     WindFarmGreedyPolicy{RNG<:AbstractRNG, P<:Union{POMDP,MDP}, U<:Updater}
 an expert policy that is used to select the greediest actions with respect to some expert knowledge function.
@@ -39,16 +39,14 @@ function greedyExpertPolicy(gpla_wf_rollout::GPLA, legal_actions::AbstractArray)
     
     best_val = argmax(vec(UCB))
 
-    best_actions = legal_actions[:,best_val]
-    return best_actions, weights
+    best_action = legal_actions[:,best_val]
+    return best_action
 end
 
 function POMDPPolicies.action(policy::WindFarmGreedyPolicy, b::WindFarmBelief)
     gpla_wf = b.gpla_wf
     legal_actions = actions(policy.problem, b)
-    best_actions, weights = rolloutExpertPolicy(gpla_wf, legal_actions)
-    # @show weights
-    policy_action = best_actions[:,1]                                               # deterministically choose the best location.
+    policy_action = greedyExpertPolicy(gpla_wf, legal_actions)                      # deterministically choose the best location.
     @show policy_action
     return Vector_to_CartIndices(policy_action)
 end
@@ -105,19 +103,13 @@ function rolloutExpertPolicy(gpla_wf_rollout::GPLA, legal_actions::AbstractArray
     return best_actions, weights
 end
 
-function POMDPPolicies.action(policy::WindFarmRolloutPolicy, s::WindFarmState)
-    gpla_wf_rollout = get_GPLA_for_gen(s, wfparams)
-    legal_actions = actions(policy.problem, s)
+function POMDPPolicies.action(policy::WindFarmRolloutPolicy, b::WindFarmBelief)
+    gpla_wf_rollout = b.gpla_wf
+    legal_actions = actions(policy.problem, b)
     best_actions, weights = rolloutExpertPolicy(gpla_wf_rollout, legal_actions)
     # @show weights
     policy_action = sample(collect(eachcol(best_actions)), Weights(weights))        # sample one candidate action w.r.t weights.
     return Vector_to_CartIndices(policy_action)
-end
-
-function BasicPOMCP.extract_belief(bu::WindFarmRolloutUpdater, node::BeliefNode)
-    # global GNode = node
-    s = rand(node.tree.sr_beliefs[2].dist)[1]                                       # rand simply extracts here. it is deterministic.
-    return initialize_belief_rollout(s)
 end
 
 function POMDPs.update(bu::WindFarmRolloutUpdater, old_b::WindFarmBelief, a::CartesianIndex{3}, obs::Number)
@@ -136,4 +128,4 @@ function POMDPs.update(bu::WindFarmRolloutUpdater, old_b::WindFarmBelief, a::Car
 end
 
 ## convenience functions ##
-POMDPPolicies.updater(policy::WindFarmRolloutPolicy) = policy.updater
+POMDPs.updater(policy::WindFarmRolloutPolicy) = policy.updater

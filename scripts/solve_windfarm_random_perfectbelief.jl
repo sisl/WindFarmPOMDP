@@ -9,26 +9,41 @@ include("../src/windfarm_expertpolicies.jl")
 # Construct POMDP
 no_of_sensors = 5
 delta = 220
-wfparams = WindFarmBeliefInitializerParams(nx=20,ny=20)
+wfparams = WindFarmBeliefInitializerParams(nx=20,ny=20, grid_dist_obs = 220)
 pomdp = WindFarmPOMDP(wfparams.nx, wfparams.ny, wfparams.grid_dist, wfparams.altitudes, no_of_sensors, delta)
 
-# Get initial belief distribution and initial state
-b0 = initialize_belief_no_prior(wfparams)
+# Get initial belief distribution (sparse version of GWA data) and initial state
+b0 = initialize_belief_sparse(wfparams)
 s0 = initialize_state(wfparams)
 
 # Construct Belief Updater
 up = WindFarmBeliefUpdater(wfparams.grid_dist)
 
 # Define Solver
-policy = WindFarmGreedyPolicy(pomdp)
+rollout_policy = WindFarmRolloutPolicy(pomdp)
+tree_queries = 100
+# solver = DESPOTSolver(bounds=IndependentBounds(DefaultPolicyLB(RandomSolver()), 0.0, check_terminal=true, consistency_fix_thresh=0.1))
+# solver = POMCPSolver(tree_queries=tree_queries)
+solver = POMCPOWSolver(tree_queries=tree_queries,
+                       check_repeat_obs=true, 
+                       check_repeat_act=true, 
+                       k_action=2.0, 
+                       alpha_action=0.5)
 
+
+planner = solve(solver, pomdp)
+
+function BasicPOMCP.extract_belief(bu::WindFarmRolloutUpdater, node::BeliefNode)
+    # global GNode = node
+    s = rand(node.tree.sr_beliefs[2].dist)[1]                                       # rand simply extracts here. it is deterministic.
+    return initialize_belief_rollout(s)
+end
 
 println("### Starting Stepthrough ###")
 global actions_history = []
 global obs_history = []
 global rewards_history = []
-global belief_history = []
-for (s, a, r, o, b, t, bp) in stepthrough(pomdp, policy, up, b0, s0, "s,a,r,o,b,t,bp", max_steps=no_of_sensors)
+for (s, a, r, o, b, t) in stepthrough(pomdp, planner, up, b0, s0, "s,a,r,o,b,t", max_steps=no_of_sensors)
     # @show s
     @show a
     @show o
@@ -37,10 +52,9 @@ for (s, a, r, o, b, t, bp) in stepthrough(pomdp, policy, up, b0, s0, "s,a,r,o,b,
     push!(actions_history, a)
     push!(obs_history, o)
     push!(rewards_history, r)
-    push!(belief_history, bp)
 end
 
-script_id = :solve_windfarm_greedy_nopriorbelief
+script_id = :solve_windfarm_random_perfectbelief
 plot_WindFarmPOMDP_policy!(script_id, wfparams, actions_history, rewards_history, b0,)
 
 # @time _, info = action_info(planner, b0, tree_in_info=true)

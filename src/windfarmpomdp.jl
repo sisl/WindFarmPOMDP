@@ -158,7 +158,7 @@ function POMDPs.actions(p::WindFarmPOMDP, b::WindFarmBelief)
     return collect(all_actions_Set)
 end
 
-function plot_WindFarmPOMDP_policy!(wfparams::WindFarmBeliefInitializerParams, actions_history::AbstractArray, rewards_history::AbstractArray, b0::WindFarmBelief)
+function plot_WindFarmPOMDP_policy!(script_id::Symbol, wfparams::WindFarmBeliefInitializerParams, actions_history::AbstractArray, rewards_history::AbstractArray, b0::WindFarmBelief)
     println("### Creating Policy Plots ###")
     nx, ny = wfparams.nx, wfparams.ny
     Map = get_3D_data(wfparams.farm; altitudes=wfparams.altitudes)
@@ -199,12 +199,14 @@ function plot_WindFarmPOMDP_policy!(wfparams::WindFarmBeliefInitializerParams, a
     end
     println("### Policy Plots Saved to $dir ###")
 
-    save_rewards_to_disk(rewards_history, "./$dir/rewards.txt")
+    save_rewards_to_disk(script_id, rewards_history, "./$dir/rewards.txt")
     return nothing
 end
 
-function save_rewards_to_disk(rewards_history::AbstractArray, savename::String)
+function save_rewards_to_disk(script_id::Symbol, rewards_history::AbstractArray, savename::String)
+    println("### Total Rewards: $(sum(rewards_history)) ###")
     open(savename, "a") do io
+        writedlm(io, ["Script: ", string(script_id, ".jl"), ""])
         writedlm(io, ["History: ", rewards_history..., ""])
         writedlm(io, ["Total: ", sum(rewards_history)])
     end

@@ -34,7 +34,11 @@ solver = POMCPOWSolver(tree_queries=tree_queries,
 
 planner = solve(solver, pomdp)
 
-
+function BasicPOMCP.extract_belief(bu::WindFarmRolloutUpdater, node::BeliefNode)
+    # global GNode = node
+    s = rand(node.tree.sr_beliefs[2].dist)[1]                                       # rand simply extracts here. it is deterministic.
+    return initialize_belief_rollout(s)
+end
 
 println("### Starting Stepthrough ###")
 global actions_history = []
@@ -51,7 +55,8 @@ for (s, a, r, o, b, t) in stepthrough(pomdp, planner, up, b0, s0, "s,a,r,o,b,t",
     push!(rewards_history, r)
 end
 
-plot_WindFarmPOMDP_policy!(wfparams, actions_history, rewards_history, b0)
+script_id = :solve_windfarm_pomcpow_perfectbelief
+plot_WindFarmPOMDP_policy!(script_id, wfparams, actions_history, rewards_history, b0,)
 
 # @time _, info = action_info(planner, b0, tree_in_info=true)
 # @time _, info = action_info(planner, b0, tree_in_info=true)

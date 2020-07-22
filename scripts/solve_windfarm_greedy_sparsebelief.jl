@@ -40,7 +40,8 @@ for (s, a, r, o, b, t, bp) in stepthrough(pomdp, policy, up, b0, s0, "s,a,r,o,b,
     push!(belief_history, bp)
 end
 
-plot_WindFarmPOMDP_policy!(wfparams, actions_history, rewards_history, b0)
+script_id = :solve_windfarm_greedy_sparsebelief
+plot_WindFarmPOMDP_policy!(script_id, wfparams, actions_history, rewards_history, b0,)
 
 # @time _, info = action_info(planner, b0, tree_in_info=true)
 # @time _, info = action_info(planner, b0, tree_in_info=true)
