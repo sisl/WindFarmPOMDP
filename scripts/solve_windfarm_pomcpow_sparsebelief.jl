@@ -9,7 +9,7 @@ include("../src/windfarm_expertpolicies.jl")
 # Construct POMDP
 no_of_sensors = 5
 delta = 220 * 4
-wfparams = WindFarmBeliefInitializerParams(nx=20,ny=20, grid_dist_obs = 220)
+wfparams = WindFarmBeliefInitializerParams(nx=20,ny=20)
 pomdp = WindFarmPOMDP(wfparams.nx, wfparams.ny, wfparams.grid_dist, wfparams.altitudes, no_of_sensors, delta)
 
 # Get initial belief distribution (sparse version of GWA data) and initial state
@@ -28,7 +28,8 @@ solver = POMCPOWSolver(tree_queries=tree_queries,
                        check_repeat_obs=true, 
                        check_repeat_act=true, 
                        k_action=2.0, 
-                       alpha_action=0.5)
+                       alpha_action=0.5,
+                       estimate_value=POMCPOW.RolloutEstimator(rollout_policy))
 
 
 planner = solve(solver, pomdp)
@@ -58,13 +59,14 @@ for (s, a, r, o, b, t, sp, bp) in stepthrough(pomdp, planner, up, b0, s0, "s,a,r
     push!(belief_history, bp)
 end
 
-script_id = :solve_windfarm_random_perfectbelief
+script_id = :solve_windfarm_pomcpow_sparsebelief
 # plot_WindFarmPOMDP_policy!(script_id, wfparams, actions_history, rewards_history, b0)
 
-# @time _, info = action_info(planner, b0, tree_in_info=true)
 # @time _, info = action_info(planner, b0, tree_in_info=true)
 # @profview _, info = action_info(planner, b0, tree_in_info=true)
 
 # @code_warntype _, info = action_info(planner, b0, tree_in_info=true)
+
+# @time _, info = action_info(planner, b0, tree_in_info=true);
 # tree = info[:tree]
 # inbrowser(D3Tree(tree, init_expand=1), "firefox")

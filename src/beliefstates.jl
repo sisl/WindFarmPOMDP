@@ -2,6 +2,8 @@ struct WindFarmState
     x_acts::AbstractArray   # actions taken so far.
     x_obs::AbstractArray    # locations observed so far.
     y_obs::AbstractArray    # values of locations observed so far.
+    x_obs_full::AbstractArray    # locations on entire map, if applicable. only for the actual states, not belief hallucinations during tree search.
+    y_obs_full::AbstractArray    # values of locations on entire map, if applicable. only for the actual states, not belief hallucinations during tree search.
 end
 
 struct WindFarmBelief
@@ -114,20 +116,30 @@ function initialize_belief_no_prior(wfparams::WindFarmBeliefInitializerParams)
     return WindFarmBelief(x_acts, gpla_wf)
 end
 
-function initialize_state(wfparams::WindFarmBeliefInitializerParams)
-    """ Called only once when the initial state is created. """
+function initialize_state(b0::WindFarmBelief, wfparams::WindFarmBeliefInitializerParams)
+    """ Called only once when the initial state is created. Assumes full knowledge of field. Should only be used with tree search methods. """
     Map = get_3D_data(wfparams.farm; altitudes=wfparams.altitudes)
-    # y_hat = rand(b.gpla_wf)
-    # x_obs = b.gpla_wf.x
     x_acts = reshape(Float64[],3,0)
+    x_obs = b0.gpla_wf.x
+    y_obs = b0.gpla_wf.y  
     X_field, Y_field = get_dataset(Map, wfparams.altitudes, wfparams.grid_dist, wfparams.grid_dist, 1, wfparams.nx, 1, wfparams.ny)
-    return WindFarmState(x_acts, X_field, Y_field)
+    return WindFarmState(x_acts, x_obs, y_obs, X_field, Y_field)
 end
+
+# function initialize_state(b0::WindFarmBelief)
+#     """ Called only once when the initial state is created. Assumes knowledge at same points as the initial belief. Should only be used with greedy solver. """
+#     x_obs = b0.gpla_wf.x
+#     y_hat = b0.gpla_wf.y
+#     x_acts = b0.x_acts
+#     return WindFarmState(x_acts, x_obs, y_hat)
+# end
 
 function POMDPs.rand(rng::AbstractRNG, b::WindFarmBelief)
     """ Called everytime a state is sampled from the belief. """
     y_hat = rand(b.gpla_wf)
     x_obs = b.gpla_wf.x
-    # Map = Dict(x => y_hat[i] for (i, x) in enumerate(eachcol(x_obs)))
-    return WindFarmState(b.x_acts, x_obs, y_hat)
+    x_acts = b.x_acts
+    x_obs_full = reshape(Float64[],3,0)
+    y_obs_full = Float64[]  
+    return WindFarmState(x_acts, x_obs, y_hat, x_obs_full, y_obs_full)
 end

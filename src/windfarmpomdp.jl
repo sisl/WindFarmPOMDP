@@ -32,26 +32,31 @@ end
 POMDPs.discount(::WindFarmPOMDP) = 0.9
 POMDPs.isterminal(p::WindFarmPOMDP, s::WindFarmState) = size(s.x_acts, 2) > p.timesteps
 
-function turbine_layout_heuristic(gpla_wf::GPLA)
+function turbine_layout_heuristic(p::WindFarmPOMDP, s::WindFarmState, gpla_wf::GPLA)
     λ = 1.0    # TODO: Coefficient for estimating profit.
     no_of_turbines = 10   # TODO: Change this?
-    ground_truth = s0
-
-    # X_field, Y_field = get_dataset(Map, m.altitudes, m.grid_dist, m.grid_dist, 1, m.nx, 1, m.ny)
-    X_field = s0.x_obs
-
+    
+    X_field = CartIndices_to_Array(POMDPs.actions(p, s))
     μ, σ² = GaussianProcesses.predict_f(gpla_wf, X_field)
     σ = sqrt.(σ²)
-    # N = length(σ)
     N = length(gpla_wf.y)
 
     z_value = 1.645   # chosen: 90 percent confidence interval
+    
+    if !isempty(s.y_obs_full)
+        Map = get_3D_data(wfparams.farm; altitudes=wfparams.altitudes)
+        Y_field = get_Y_from_farm_location.(eachcol(X_field), Ref(Map), Ref(wfparams.grid_dist))
+        truth_CB = μ - z_value * abs.(μ - Y_field)     # penalty for incorrect layout heuristic
+    else
+        truth_CB = μ
+    end
+    
     LCB = μ - z_value / sqrt(N) * σ
-    
     best_vals = partialsortperm(vec(LCB), 1:no_of_turbines, rev=true)
-    expected_profit = λ * sum(μ[best_vals] .^3)
-    
-    # @show sort(vec(μ), rev=true)[1:10]
+    expected_profit = λ * sum(truth_CB[best_vals] .^3)
+
+
+    # @show length(gpla_wf.y)
     # @show μ[best_vals]
     # @show σ[best_vals]
     # @show expected_profit
@@ -60,12 +65,13 @@ end
 
 function get_tower_cost(a)
     height = a[end]
-    height < 90 ? 92600.0/116000.0 : 1.0 
+    # height < 90 ? 92600.0/116000.0 : 1.0 
+    return height * 10
 end
 
-function get_GPLA_for_gen(s::WindFarmState, wfparams::WindFarmBeliefInitializerParams)
+function get_GPLA_for_gen(X, Y, wfparams::WindFarmBeliefInitializerParams)
     kernel = WLK_SEIso(eps(), eps(), eps(), eps(), eps(), eps())
-    gpla_wf = GPLA(s.x_obs, s.y_obs, wfparams.num_neighbors, 0, 0, MeanConst(wfparams.theta[2]), kernel, wfparams.theta[1])
+    gpla_wf = GPLA(X, Y, wfparams.num_neighbors, 0, 0, MeanConst(wfparams.theta[2]), kernel, wfparams.theta[1])
     GaussianProcesses.set_params!(gpla_wf, wfparams.theta)
     return gpla_wf
 end
@@ -80,10 +86,17 @@ function POMDPs.gen(m::WindFarmPOMDP, s::WindFarmState, a0::CartesianIndex{3}, r
     a = expand_action_to_altitudes(a0, m.altitudes)
     a = CartIndices_to_Array(a)
     
-    # Get observation
-    gpla_wf = get_GPLA_for_gen(s, wfparams)
-    # o, _ = predict_f(gpla_wf, a)
-    o = rand(gpla_wf, a)
+    # Get observations
+    if !isempty(s.y_obs_full)
+        gpla_wf_full = get_GPLA_for_gen(s.x_obs_full, s.y_obs_full, wfparams)
+        gpla_wf = get_GPLA_for_gen(s.x_obs, s.y_obs, wfparams)
+        o = rand(gpla_wf_full, a)
+        @show "observed truth"
+    else
+        gpla_wf = get_GPLA_for_gen(s.x_obs, s.y_obs, wfparams)
+        o = rand(gpla_wf, a)
+    end
+
     
     # Seperate the action's altitude and the observation at that altitude.
     a0_idx = findfirst(x -> x == a0[3], m.altitudes)
@@ -98,7 +111,7 @@ function POMDPs.gen(m::WindFarmPOMDP, s::WindFarmState, a0::CartesianIndex{3}, r
     end
     sp_x_obs = hcat(s.x_obs, a)
     sp_y_obs = vcat(s.y_obs, o)
-    sp = WindFarmState(sp_x_acts, sp_x_obs, sp_y_obs)
+    sp = WindFarmState(sp_x_acts, sp_x_obs, sp_y_obs, s.x_obs_full, s.y_obs_full)
 
     # Discretize observation to avoid shallow trees
     # o = encode(LinearDiscretizer(collect(0 : 0.25 : 10)), o)  ## TODO: Use discretized FLoat instead
@@ -106,7 +119,7 @@ function POMDPs.gen(m::WindFarmPOMDP, s::WindFarmState, a0::CartesianIndex{3}, r
     
     # Get reward
     GaussianProcesses.fit!(gpla_wf, sp_x_obs, sp_y_obs) 
-    r = turbine_layout_heuristic(gpla_wf) - get_tower_cost(a0)
+    r = turbine_layout_heuristic(m, sp, gpla_wf) - get_tower_cost(a0)
 
     # @show o
     # @show a
@@ -118,7 +131,7 @@ end
 function POMDPModelTools.obs_weight(p::WindFarmPOMDP, s::WindFarmState, a::CartesianIndex{3}, sp::WindFarmState, o::AbstractVector)
     a = CartIndices_to_Vector(a)
 
-    gpla_wf = get_GPLA_for_gen(s, wfparams)
+    gpla_wf = get_GPLA_for_gen(s.x_obs, s.y_obs, wfparams)
     μ, σ² = GaussianProcesses.predict_f(gpla_wf, a)
     σ = sqrt.(σ²)
     

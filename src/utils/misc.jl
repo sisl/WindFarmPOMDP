@@ -9,6 +9,12 @@ nearestRound(x::AbstractArray,i) = nearestRound.(x,i)
 
 # ProgressBars.tqdm(X) = isequal(length(X),1) ? X : ProgressBars.tqdm(X)   # fixes ProgressBar not working with single element AbstractArray.
 
+function writedlm_append(fname::AbstractString, data)
+    open(fname, "a") do io
+        DelimitedFiles.writedlm(io, data)
+    end
+end
+
 function CartIndices_to_Vector(a::CartesianIndex)
     a = collect(a.I)[:,1:1]    # Convert from CartesianIndex to Vector.
     a = Float64.(a)

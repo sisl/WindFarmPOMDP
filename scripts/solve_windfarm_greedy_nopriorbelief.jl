@@ -14,7 +14,7 @@ pomdp = WindFarmPOMDP(wfparams.nx, wfparams.ny, wfparams.grid_dist, wfparams.alt
 
 # Get initial belief distribution and initial state
 b0 = initialize_belief_no_prior(wfparams)
-s0 = initialize_state(wfparams)
+s0 = initialize_state(b0, wfparams)
 
 # Construct Belief Updater
 up = WindFarmBeliefUpdater(wfparams.altitudes, wfparams.grid_dist)
@@ -24,16 +24,18 @@ policy = WindFarmGreedyPolicy(pomdp)
 
 
 println("### Starting Stepthrough ###")
+global states_history = []
 global actions_history = []
 global obs_history = []
 global rewards_history = []
 global belief_history = []
-for (s, a, r, o, b, t, bp) in stepthrough(pomdp, policy, up, b0, s0, "s,a,r,o,b,t,bp", max_steps=no_of_sensors)
+for (s, a, r, o, b, t, sp, bp) in stepthrough(pomdp, policy, up, b0, s0, "s,a,r,o,b,t,sp,bp", max_steps=no_of_sensors)
     # @show s
     @show a
     @show o
     @show r
     @show t
+    push!(states_history, sp)
     push!(actions_history, a)
     push!(obs_history, o)
     push!(rewards_history, r)
@@ -41,7 +43,7 @@ for (s, a, r, o, b, t, bp) in stepthrough(pomdp, policy, up, b0, s0, "s,a,r,o,b,
 end
 
 script_id = :solve_windfarm_greedy_nopriorbelief
-plot_WindFarmPOMDP_policy!(script_id, wfparams, actions_history, rewards_history, b0,)
+# plot_WindFarmPOMDP_policy!(script_id, wfparams, actions_history, rewards_history, b0)
 
 # @time _, info = action_info(planner, b0, tree_in_info=true)
 # @time _, info = action_info(planner, b0, tree_in_info=true)
