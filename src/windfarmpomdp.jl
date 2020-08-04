@@ -124,7 +124,7 @@ function POMDPs.gen(m::WindFarmPOMDP, s::WindFarmState, a0::CartesianIndex{3}, r
     # @show o
     # @show a
     # @show a, o, size(s.x_acts, 2)
-    return (sp = sp, o = o, r = r)
+    return (sp = sp, o = o, r = r/10000)
 end
 
 # P(o|s,a,s')
