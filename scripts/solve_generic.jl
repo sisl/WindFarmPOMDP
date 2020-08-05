@@ -30,8 +30,12 @@ dir = string("Generic_Run_Results")
 dt = Dates.now()
 
 global REWARD_RECORDS = []
+<<<<<<< HEAD
 # Threads.@threads for c in 1:no_of_runs    # Runs in parallel threads.
 for c in 1:no_of_runs                       # Runs series.
+=======
+Threads.@threads for c in 1:no_of_runs    # Runs in parallel threads.
+>>>>>>> 8aa2ac0c7d4e277962b9f10923c4f156c8d650e0
     @show c
     time_taken = @elapsed include(script_name)
     push!(REWARD_RECORDS, sum(rewards_history))
