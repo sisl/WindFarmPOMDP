@@ -120,7 +120,9 @@ function POMDPs.update(bu::WindFarmRolloutUpdater, old_b::WindFarmBelief, a::Car
 
     x_acts = hcat(old_b.x_acts, a0)
 
-    gpla_wf = deepcopy(old_b.gpla_wf)
+    # gpla_wf = deepcopy(old_b.gpla_wf)
+    gpla_wf = old_b.gpla_wf
+
     x_obs, y_obs = gpla_wf.x, gpla_wf.y
     
     x_obs = hcat(x_obs, a)

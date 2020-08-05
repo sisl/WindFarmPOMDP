@@ -91,7 +91,7 @@ function POMDPs.gen(m::WindFarmPOMDP, s::WindFarmState, a0::CartesianIndex{3}, r
         gpla_wf_full = get_GPLA_for_gen(s.x_obs_full, s.y_obs_full, wfparams)
         gpla_wf = get_GPLA_for_gen(s.x_obs, s.y_obs, wfparams)
         o = rand(gpla_wf_full, a)
-        @show "observed truth"
+        # @show "observed truth"
     else
         gpla_wf = get_GPLA_for_gen(s.x_obs, s.y_obs, wfparams)
         o = rand(gpla_wf, a)
@@ -124,7 +124,7 @@ function POMDPs.gen(m::WindFarmPOMDP, s::WindFarmState, a0::CartesianIndex{3}, r
     # @show o
     # @show a
     # @show a, o, size(s.x_acts, 2)
-    return (sp = sp, o = o, r = r)
+    return (sp = sp, o = o, r = r/10000)
 end
 
 # P(o|s,a,s')

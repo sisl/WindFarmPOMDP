@@ -18,7 +18,6 @@ wfparams = WindFarmBeliefInitializerParams(nx=20,ny=20)
 pomdp = WindFarmPOMDP(wfparams.nx, wfparams.ny, wfparams.grid_dist, wfparams.altitudes, no_of_sensors, delta)
 
 # Get initial belief distribution (sparse version of GWA data) and initial state
-# b0 = initialize_belief_sparse(wfparams)
 windNoise = 1.5
 b0 = initialize_belief_noisy(wfparams, windNoise)
 s0 = initialize_state(b0, wfparams)
@@ -28,17 +27,7 @@ up = WindFarmBeliefUpdater(wfparams.altitudes, wfparams.grid_dist)
 
 # Define Solver
 rollout_policy = WindFarmRolloutPolicy(pomdp)
-tree_queries = 250
-# solver = DESPOTSolver(bounds=IndependentBounds(DefaultPolicyLB(RandomSolver()), 0.0, check_terminal=true, consistency_fix_thresh=0.1))
-# solver = POMCPSolver(tree_queries=tree_queries)
-# solver = POMCPOWSolver(tree_queries=tree_queries,
-#                        check_repeat_obs=true, 
-#                        check_repeat_act=true, 
-#                        k_action=2.0, 
-#                        alpha_action=0.5,
-#                        estimate_value=POMCPOW.RolloutEstimator(rollout_policy))
-
-
+tree_queries = tree_queries_generic
 
 
 function BOMCP.belief_type(::WindFarmBeliefUpdater)
@@ -46,13 +35,7 @@ function BOMCP.belief_type(::WindFarmBeliefUpdater)
 end
 
 function BOMCP.vectorize!(v, dims, a::CartesianIndex{3})
-    # @show v
-    # @show dims
-    # v[1] = a[1] ? 10.0 : 0.0
-    # v[2] = a[2][1]
-    # v[3] = a[2][2]
     v[:] = collect(a.I)
-    # @show v
     return v
 end
 
@@ -68,20 +51,18 @@ action_selector = BOMCP.BOActionSelector(3, # action dims
                                 true, #discrete actions
                                 kernel_params=[log(20.0), 0.0],
                                 k_neighbors = 5,
-                                belief_λ = -1.0 #3.0/60.0
-                                )
-
+                                belief_λ = -1.0)
 
 solver = BOMCP.BOMCPSolver(action_selector, up,
-                    depth=no_of_sensors,
-                    n_iterations=tree_queries,
-                    exploration_constant=1.0,
-                    k_belief = 2.0,
-                    alpha_belief = 0.1,
-                    k_action = 3.,
-                    alpha_action = 0.25,
-                    estimate_value=BOMCP.RolloutEstimator(rollout_policy)
-                    )
+                                depth=no_of_sensors,
+                                n_iterations=tree_queries,
+                                exploration_constant=1.0,
+                                k_belief = 2.0,
+                                alpha_belief = 0.1,
+                                k_action=3.0,
+                                alpha_action=0.3,
+                                estimate_value=BOMCP.RolloutEstimator(rollout_policy))
+
 
 planner = POMDPs.solve(solver, pomdp)
 

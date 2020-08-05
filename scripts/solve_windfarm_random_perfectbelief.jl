@@ -21,7 +21,7 @@ up = WindFarmBeliefUpdater(wfparams.altitudes, wfparams.grid_dist)
 
 # Define Solver
 rollout_policy = WindFarmRolloutPolicy(pomdp)
-tree_queries = 250
+tree_queries = tree_queries_generic
 # solver = DESPOTSolver(bounds=IndependentBounds(DefaultPolicyLB(RandomSolver()), 0.0, check_terminal=true, consistency_fix_thresh=0.1))
 # solver = POMCPSolver(tree_queries=tree_queries)
 solver = POMCPOWSolver(tree_queries=tree_queries,
