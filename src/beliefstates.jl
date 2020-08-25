@@ -69,7 +69,7 @@ function initialize_belief_sparse(wfparams::WindFarmBeliefInitializerParams)
 
     # Load prior points for belief GP
     Map = get_3D_data(wfparams.farm; altitudes=wfparams.altitudes)
-    X_obs, _ = get_dataset(Map, wfparams.altitudes, wfparams.grid_dist_obs, wfparams.grid_dist, 1, wfparams.nx, 1, wfparams.ny)
+    X_obs, _ = get_dataset(Map, wfparams.altitudes, wfparams.grid_dist_obs, wfparams.grid_dist, 1, wfparams.nx+1, 1, wfparams.ny+1)
     Y_obs = map(lambda -> get_Y_from_farm_location(lambda, Map, wfparams.grid_dist), collect(eachcol(X_obs)))
 
     # Create initial kernel
@@ -103,6 +103,7 @@ function initialize_belief_noisy(wfparams::WindFarmBeliefInitializerParams, wind
 end
 
 function initialize_belief_no_prior(wfparams::WindFarmBeliefInitializerParams)
+
     # Load prior points for belief GP
     X_obs = reshape(Float64[],3,0)
     Y_obs = Float64[]
@@ -111,6 +112,50 @@ function initialize_belief_no_prior(wfparams::WindFarmBeliefInitializerParams)
     kernel = WLK_SEIso(eps(), eps(), eps(), eps(), eps(), eps())
     gpla_wf = GPLA(X_obs, Y_obs, wfparams.num_neighbors, 0, 0, MeanConst(wfparams.theta[2]), kernel, wfparams.theta[1])
     GaussianProcesses.set_params!(gpla_wf, wfparams.theta)
+
+    x_acts = reshape(Float64[],3,0)
+    return WindFarmBelief(x_acts, gpla_wf)
+end
+
+function initialize_belief_lookup(wfparams::WindFarmBeliefInitializerParams; SCALE_FACTOR=4::Int)
+    """ This version has no observation points in the Gaussian prior, but instead, we the mean function of the GP is 
+        a lookup table of the downsampled version of the GWA data of the specified altitudes.
+    """
+    nx, ny = wfparams.nx, wfparams.ny
+    grid_dist = wfparams.grid_dist
+
+    # Load prior points for belief GP
+    X_obs = reshape(Float64[],3,0)
+    Y_obs = Float64[]
+
+    # Load wind farm data
+    Map = get_3D_data(wfparams.farm; altitudes = wfparams.altitudes)
+    
+    # Downsample farm data
+    IMG_SIZE = (div(nx, isqrt(SCALE_FACTOR)), div(ny, isqrt(SCALE_FACTOR)))
+    
+    Y_mean = Float64[]
+    X_mean = reshape(Float64[],3,0)
+    
+    for h in wfparams.altitudes
+        img = Map[h][1:nx,1:ny]
+        img_ds = ImageTransformations.imresize(img, IMG_SIZE)
+        
+        img_locs = [[i,j] for i in 0.0:grid_dist:(nx-1)*grid_dist, j in 0.0:grid_dist:(ny-1)*grid_dist]
+        img_locs_ds = ImageTransformations.imresize(img_locs, IMG_SIZE)
+        X = [[item...,h] for item in vec(img_locs_ds)]
+        
+        Y_mean = vcat(Y_mean, vec(img_ds))
+        X_mean = hcat(X_mean, transform4GPjl(X))
+    end
+    
+    # Create the lookup mean to the GP
+    gpla_wf_mean = MeanLookup(X_mean, Y_mean)
+
+    # Create initial kernel
+    kernel = WLK_SEIso(eps(), eps(), eps(), eps(), eps(), eps())
+    gpla_wf = GPLA(X_obs, Y_obs, wfparams.num_neighbors, 0, 0, gpla_wf_mean, kernel, wfparams.theta[1])
+    GaussianProcesses.set_params!(gpla_wf, wfparams.theta[3:end]; noise=false, domean=false)
 
     x_acts = reshape(Float64[],3,0)
     return WindFarmBelief(x_acts, gpla_wf)

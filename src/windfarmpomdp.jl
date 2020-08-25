@@ -9,6 +9,7 @@ using ProgressBars
 using DelimitedFiles
 using Dates
 using Plots
+using ImageTransformations
 
 # windGP scripts
 include("../../windGP/src/dataparser_GWA.jl")
@@ -70,16 +71,26 @@ function get_tower_cost(a)
 end
 
 function get_GPLA_for_gen(X, Y, wfparams::WindFarmBeliefInitializerParams)
-    kernel = WLK_SEIso(eps(), eps(), eps(), eps(), eps(), eps())
-    gpla_wf = GPLA(X, Y, wfparams.num_neighbors, 0, 0, MeanConst(wfparams.theta[2]), kernel, wfparams.theta[1])
-    GaussianProcesses.set_params!(gpla_wf, wfparams.theta)
+
+    if typeof(b0.gpla_wf.mean) == GaussianProcesses.MeanConst
+        gp_mean = MeanConst(wfparams.theta[2])
+        kernel = WLK_SEIso(eps(), eps(), eps(), eps(), eps(), eps())
+        gpla_wf = GPLA(X, Y, wfparams.num_neighbors, 0, 0, gp_mean, kernel, wfparams.theta[1])
+        GaussianProcesses.set_params!(gpla_wf, wfparams.theta)
+    else
+        gp_mean = b0.gpla_wf.mean
+        kernel = WLK_SEIso(eps(), eps(), eps(), eps(), eps(), eps())
+        gpla_wf = GPLA(X, Y, wfparams.num_neighbors, 0, 0, gp_mean, kernel, wfparams.theta[1])
+        GaussianProcesses.set_params!(gpla_wf, wfparams.theta[3:end]; noise=false, domean=false)
+    end
+
     return gpla_wf
 end
 
-
-# State: WindFarmState
-# Action: CartesianIndex{3}
-# Obs: Int
+""" State: WindFarmState
+    Action: CartesianIndex{3}
+    Obs: Int
+"""
 function POMDPs.gen(m::WindFarmPOMDP, s::WindFarmState, a0::CartesianIndex{3}, rng::AbstractRNG)
 
     # Transform the action location to Vector
@@ -91,7 +102,6 @@ function POMDPs.gen(m::WindFarmPOMDP, s::WindFarmState, a0::CartesianIndex{3}, r
         gpla_wf_full = get_GPLA_for_gen(s.x_obs_full, s.y_obs_full, wfparams)
         gpla_wf = get_GPLA_for_gen(s.x_obs, s.y_obs, wfparams)
         o = rand(gpla_wf_full, a)
-        # @show "observed truth"
     else
         gpla_wf = get_GPLA_for_gen(s.x_obs, s.y_obs, wfparams)
         o = rand(gpla_wf, a)
@@ -233,6 +243,55 @@ function plot_WindFarmPOMDP_policy!(script_id::Symbol, wfparams::WindFarmBeliefI
     save_rewards_to_disk(script_id, rewards_history, "./$dir/rewards.txt")
     return nothing
 end
+
+# function plot_WindFarmPOMDP_policy!(script_id::Symbol, wfparams::WindFarmBeliefInitializerParams, actions_history::AbstractArray, rewards_history::AbstractArray, b0::WindFarmBelief)
+#     println("### Creating Policy Plots ###")
+#     nx, ny = wfparams.nx, wfparams.ny
+#     Map = get_3D_data(wfparams.farm; altitudes=wfparams.altitudes)
+#     actions_history = CartIndices_to_Vector.(actions_history)
+    
+#     !isdir("Figures") ? mkdir("Figures") : nothing
+#     dir = string("Figures/", Dates.now())
+#     mkdir(dir)
+
+#     gpla_wf = b0.gpla_wf
+#     X_field, Y_field = get_dataset(Map, [150], wfparams.grid_dist, wfparams.grid_dist, 1, wfparams.nx, 1, wfparams.ny)
+#     p1 = Plots.heatmap(reshape(Y_field, (nx,ny)), title="Wind Farm Sensor Locations Chosen")
+    
+#     # Plots of initial belief below.
+#     μ, σ² = GaussianProcesses.predict_f(gpla_wf, X_field)
+#     σ = sqrt.(σ²)
+
+#     p2 = Plots.heatmap(reshape(σ, (nx,ny)), title="Wind Farm Initial Belief Variance")
+#     p3 = Plots.heatmap(reshape(μ, (nx,ny)), title="Wind Farm Initial Belief Mean")
+
+
+#     for (h_idx, h) in enumerate(wfparams.altitudes)
+
+#         plt_colors = [:white, :magenta, :green]
+
+#         a_in_h = reshape(Float64[],2,0)
+#         for a in actions_history
+#             if a[end]==h
+#                 a_in_h = hcat(a_in_h, a[1:2] / wfparams.grid_dist + [1,1])    # [1,1] is added because locations were 0-based indexed.
+#             end
+#         end
+        
+#         Plots.scatter!(p1, a_in_h[2,:], a_in_h[1,:], legend=false, color=plt_colors[h_idx])  # Notice that the row and col of `a_in_h` is reversed.
+#         Plots.savefig(p1, "./$dir/Plot_$h")
+    
+#         Plots.scatter!(p2, a_in_h[2,:], a_in_h[1,:], legend=false, color=plt_colors[h_idx])  # Notice that the row and col of `a_in_h` is reversed.
+#         Plots.savefig(p2, "./$dir/Plot2_$h")
+
+#         Plots.scatter!(p3, a_in_h[2,:], a_in_h[1,:], legend=false, color=plt_colors[h_idx])  # Notice that the row and col of `a_in_h` is reversed.
+#         Plots.savefig(p3, "./$dir/Plot3_$h")
+
+#     end
+#     println("### Policy Plots Saved to $dir ###")
+
+#     save_rewards_to_disk(script_id, rewards_history, "./$dir/rewards.txt")
+#     return nothing
+# end
 
 function save_rewards_to_disk(script_id::Symbol, rewards_history::AbstractArray, savename::String)
     println("### Total Rewards: $(sum(rewards_history)) ###")
