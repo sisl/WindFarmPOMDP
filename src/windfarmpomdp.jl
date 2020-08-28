@@ -1,5 +1,5 @@
 # Modules
-using POMDPs
+using POMDPs, POMDPModelTools
 using GaussianProcesses
 using Random
 using Distributions
@@ -13,6 +13,7 @@ using ImageTransformations
 
 # windGP scripts
 include("../../windGP/src/dataparser_GWA.jl")
+include("../../windGP/src/dataparser_SRTM.jl")
 include("../../windGP/src/GPLA.jl")
 include("../../windGP/src/utils/WLK_SEIso.jl")
 

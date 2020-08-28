@@ -22,12 +22,15 @@ csv_filenames_pomcpow =
 
 csv_filename_greedy = "solve_windfarm_greedy_sparsebelief_2020-08-16T09:40:19.807.csv"
 
+
+#### Plot Rewards ####
+
+## Plot BOMCP results ##
+
 μs_bomcp = []
 σs_bomcp = []
 tq_bomcp = []
 time_bomcp = []
-
-## Plot BOMCP results
 
 for fl in csv_filenames_bomcp
 
@@ -65,7 +68,7 @@ ylabel!(p1, "Average Rewards")
 yaxis!(p1, [5000, 25000])
 
 
-## Plot POMCPOW results
+## Plot POMCPOW results ##
 
 μs_pomcpow = []
 σs_pomcpow = []
@@ -104,7 +107,8 @@ plot!(p1, tq_pomcpow, μs_pomcpow, grid=true,
     m = (3,:red,:square))
 
 
-## Plot Greedy results
+## Plot Greedy results ##
+
 μs_greedy = []
 σs_greedy = []
 time_greedy = []
@@ -143,8 +147,8 @@ plot!(p1, tq_greedy, μs_greedy, grid=true,
 title!("Wind Farm Planning Results")
 
 
-# p2 =  plot(1:10, 1:10, seriestype = :bar, label = "1", alpha = 0.4)
-# plot!(1:10, NaN.*(1:10), label = "2", linecolor=:green, grid=false, legend=:left) 
+
+#### Plot Times ####
 
 yticks_twinx = collect(0:7:28)
 yaxis_twinx = [0,28]
@@ -167,7 +171,7 @@ plot!(twinx(), tq_pomcpow, time_pomcpow, label=false, linestyle = :dash, linecol
     yticks = yticks_twinx,
     axis = nothing)
 
-# # Greedy time curve
+# Greedy time curve
 plot!(twinx(), tq_greedy, time_greedy, label=false, linestyle = :dash, linecolor=:green,
     yaxis = yaxis_twinx,    
     yticks = yticks_twinx,
