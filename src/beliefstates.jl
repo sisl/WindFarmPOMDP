@@ -18,7 +18,7 @@ end
 
 function POMDPs.update(bu::WindFarmBeliefUpdater, old_b::WindFarmBelief, a::CartesianIndex{3}, obs::AbstractVector)
     a0 = CartIndices_to_Vector(a)
-    a = expand_action_to_altitudes(a, bu.altitudes)
+    a = expand_action_to_below_altitudes(a, bu.altitudes)
     a = CartIndices_to_Array(a)
 
     x_acts = hcat(old_b.x_acts, a0)

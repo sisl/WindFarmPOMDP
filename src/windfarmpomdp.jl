@@ -16,6 +16,7 @@ include("../../windGP/src/dataparser_GWA.jl")
 include("../../windGP/src/dataparser_SRTM.jl")
 include("../../windGP/src/GPLA.jl")
 include("../../windGP/src/utils/WLK_SEIso.jl")
+include("../../windGP/src/utils/mLookup.jl")
 
 # WindFarmPOMDP scripts
 include("../src/beliefstates.jl")
@@ -95,7 +96,8 @@ end
 function POMDPs.gen(m::WindFarmPOMDP, s::WindFarmState, a0::CartesianIndex{3}, rng::AbstractRNG)
 
     # Transform the action location to Vector
-    a = expand_action_to_altitudes(a0, m.altitudes)
+    # a = expand_action_to_altitudes(a0, m.altitudes)
+    a = expand_action_to_below_altitudes(a0, m.altitudes)
     a = CartIndices_to_Array(a)
     
     # Get observations
@@ -192,6 +194,7 @@ end
 
 expand_action_to_altitudes(a::CartesianIndex, altitudes::AbstractVector) = [CartesianIndex(a[1], a[2], h) for h in altitudes]
 expand_action_to_other_altitudes(a::CartesianIndex, altitudes::AbstractVector) = [CartesianIndex(a[1], a[2], h) for h in setdiff(Set(altitudes),a[3])]
+expand_action_to_below_altitudes(a::CartesianIndex, altitudes::AbstractVector) = [CartesianIndex(a[1], a[2], h) for h in altitudes if h <= a[3]]
 
 function expand_action_to_limits(a::CartesianIndex, altitudes, grid_dist, delta)
     """ Creates an array of blocked locations (considering both altitude and delta limits), given an action. """
@@ -224,7 +227,8 @@ function plot_WindFarmPOMDP_policy!(script_id::Symbol, wfparams::WindFarmBeliefI
         X_field, Y_field = get_dataset(Map, [h], wfparams.grid_dist, wfparams.grid_dist, 1, wfparams.nx, 1, wfparams.ny)
         p = Plots.heatmap(reshape(Y_field, (nx,ny)), title="Wind Farm Sensor Locations Chosen, h = $(h)m")
         Plots.scatter!(a_in_h[2,:], a_in_h[1,:], legend=false, color=:white)  # Notice that the row and col of `a_in_h` is reversed.
-        Plots.savefig(p, "./$dir/Plot_$h")
+        Plots.savefig(p, "./$dir/Plot_$h.png")
+        Plots.savefig(p, "./$dir/Plot_$h.pdf")
     
         # Plots of initial belief below.
         μ, σ² = GaussianProcesses.predict_f(gpla_wf, X_field)
@@ -232,11 +236,13 @@ function plot_WindFarmPOMDP_policy!(script_id::Symbol, wfparams::WindFarmBeliefI
 
         p2 = Plots.heatmap(reshape(σ, (nx,ny)), title="Wind Farm Initial Belief Variance, h = $(h)m")
         Plots.scatter!(a_in_h[2,:], a_in_h[1,:], legend=false, color=:white)  # Notice that the row and col of `a_in_h` is reversed.
-        Plots.savefig(p2, "./$dir/Plot2_$h")
+        Plots.savefig(p2, "./$dir/Plot2_$h.png")
+        Plots.savefig(p2, "./$dir/Plot2_$h.pdf")
 
         p3 = Plots.heatmap(reshape(μ, (nx,ny)), title="Wind Farm Initial Belief Mean, h = $(h)m")
         Plots.scatter!(a_in_h[2,:], a_in_h[1,:], legend=false, color=:white)  # Notice that the row and col of `a_in_h` is reversed.
-        Plots.savefig(p3, "./$dir/Plot3_$h")
+        Plots.savefig(p3, "./$dir/Plot3_$h.png")
+        Plots.savefig(p3, "./$dir/Plot3_$h.pdf")
 
     end
     println("### Policy Plots Saved to $dir ###")

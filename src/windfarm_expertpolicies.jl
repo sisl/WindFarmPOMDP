@@ -1,12 +1,12 @@
 using StatsBase
 
 """
-    WindFarmGreedyPolicy{RNG<:AbstractRNG, P<:Union{POMDP,MDP}, U<:Updater}
-an expert policy that is used to select the greediest actions with respect to some expert knowledge function.
+    WindFarmUCBPolicy{RNG<:AbstractRNG, P<:Union{POMDP,MDP}, U<:Updater}
+an expert policy that is used to select the greediest actions with respect to some Upper Confidence Bounds.
 
 Constructor:
 
-    `WindFarmGreedyPolicy(problem::Union{POMDP,MDP};
+    `WindFarmUCBPolicy(problem::Union{POMDP,MDP};
              rng=Random.GLOBAL_RNG,
              updater=POMDPPolicies.NothingUpdater())`
 
@@ -16,38 +16,35 @@ Constructor:
 - `updater::U` a belief updater (default to `POMDPPolicies.NothingUpdater` in the above constructor)
 """
 
-mutable struct WindFarmGreedyPolicy{RNG<:AbstractRNG, P<:Union{POMDP,MDP}, U<:Updater} <: Policy
+mutable struct WindFarmUCBPolicy{RNG<:AbstractRNG, P<:Union{POMDP,MDP}, U<:Updater} <: Policy
     rng::RNG
     problem::P
     updater::U # set this to use a custom updater, by default it will be a void updater
 end
 # The constructor below should be used to create the policy so that the action space is initialized correctly
-WindFarmGreedyPolicy(problem::Union{POMDP,MDP}; rng=Random.GLOBAL_RNG, updater=POMDPPolicies.NothingUpdater()) = WindFarmGreedyPolicy(rng, problem, updater)
+WindFarmUCBPolicy(problem::Union{POMDP,MDP}; rng=Random.GLOBAL_RNG, updater=POMDPPolicies.NothingUpdater()) = WindFarmUCBPolicy(rng, problem, updater)
 
 
-function greedyExpertPolicy(gpla_wf_rollout::GPLA, legal_actions::AbstractArray)
+function greedyUCBPolicy(gpla_wf::GPLA, legal_actions::AbstractArray)
     legal_actions = CartIndices_to_Array(legal_actions)
 
-    μ, σ² = GaussianProcesses.predict_f(gpla_wf_rollout, legal_actions)
+    μ, σ² = GaussianProcesses.predict_f(gpla_wf, legal_actions)
     σ = sqrt.(σ²)
-    N = length(gpla_wf_rollout.y)
+    N = length(gpla_wf.y)
 
     z_value = 1.645   # chosen: 90 percent confidence interval
     UCB = μ + z_value / sqrt(N) * σ
-    # UCB = dropdims(μ, dims=2)
-
     
     best_val = argmax(vec(UCB))
-
     best_action = legal_actions[:,best_val]
     return best_action
 end
 
-function POMDPPolicies.action(policy::WindFarmGreedyPolicy, b::WindFarmBelief)
+function POMDPPolicies.action(policy::WindFarmUCBPolicy, b::WindFarmBelief)
     gpla_wf = b.gpla_wf
     legal_actions = actions(policy.problem, b)
-    policy_action = greedyExpertPolicy(gpla_wf, legal_actions)                      # deterministically choose the best location.
-    @show policy_action
+    policy_action = greedyUCBPolicy(gpla_wf, legal_actions)                      # deterministically choose the best location.
+    # @show policy_action
     return Vector_to_CartIndices(policy_action)
 end
 
@@ -115,7 +112,7 @@ end
 
 function POMDPs.update(bu::WindFarmRolloutUpdater, old_b::WindFarmBelief, a::CartesianIndex{3}, obs::AbstractVector)
     a0 = CartIndices_to_Vector(a)
-    a = expand_action_to_altitudes(a, bu.altitudes)
+    a = expand_action_to_below_altitudes(a, bu.altitudes)
     a = CartIndices_to_Array(a)
 
     x_acts = hcat(old_b.x_acts, a0)
