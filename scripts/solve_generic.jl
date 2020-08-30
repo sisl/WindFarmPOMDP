@@ -1,6 +1,4 @@
 """
-!!! WARNING: Remember to start Julia with `julia -p auto` or `julia -p N` where N is the number of cores chosen !!!
-
 The user should pass in the the following arguments in the Terminal.
 
 # Arguments 
@@ -9,8 +7,10 @@ The user should pass in the the following arguments in the Terminal.
 - `tree_queries` number of queries down the tree 
 """
 
-using Distributed
-println("### Number of workers: $(nworkers())")
+if Threads.nthreads() == 1
+    @warn "You are not running Julia in multiple threads. Aborted.\nRun e.g. `export JULIA_NUM_THREADS=16` in Terminal before running script."
+    exit()
+end
 
 using POMDPs, POMDPModelTools, POMDPSimulators, POMDPPolicies
 using BasicPOMCP, POMCPOW
