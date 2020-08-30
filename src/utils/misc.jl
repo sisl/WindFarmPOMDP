@@ -2,6 +2,9 @@
 
 average(a::AbstractArray) = sum(a::AbstractArray)/length(a::AbstractArray)
 
+argmaxall(A) = findall(A .== maximum(A))    # returns indices of all the argmaxing values.
+argmaxall(A; threshold = eps()) = findall(maximum(A) .- A .<= threshold)    # returns indices of all the argmaxing values.
+
 eye(x::Int) = [a==b ? 1.0 : 0.0 for a in 1:x, b in 1:x]   # create identity matrix (no dependencies).
 
 nearestRound(x::Number,i) = (x % i) > (i/2) ? x + i - x%i : x - x%i   # rounds x to the nearest multiple of i.
@@ -26,7 +29,9 @@ function CartIndices_to_Array(A::Array{CartesianIndex{N},T} where {N,T})
     return transform4GPjl(A)
 end
 
-Vector_to_CartIndices(a) = CartesianIndex(Int.(a)...)
+Vector_to_CartIndices(a::AbstractVecOrMat) = CartesianIndex(Int.(a)...)
+
+Array_to_CartIndices(A::AbstractArray) = Vector_to_CartIndices.(eachcol(A))
 
 function maxk!(ix, a, k; initialized=false)         # picks top k values in an array. 
     partialsortperm!(ix, a, 1:k, rev=true, initialized=initialized)
