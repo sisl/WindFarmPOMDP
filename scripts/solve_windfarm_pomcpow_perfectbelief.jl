@@ -1,5 +1,5 @@
-using POMDPs, POMDPModelTools, POMDPSimulators, POMDPPolicies, POMDPModelTools
-using BasicPOMCP, ARDESPOT, POMCPOW
+using POMDPs, POMDPModelTools, POMDPSimulators, POMDPPolicies
+using BasicPOMCP, POMCPOW
 # using D3Trees, ProfileView
 
 include("../src/windfarmpomdp.jl")

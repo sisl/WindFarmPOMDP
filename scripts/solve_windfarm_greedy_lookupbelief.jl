@@ -13,7 +13,7 @@ wfparams = WindFarmBeliefInitializerParams(nx=20,ny=20)
 pomdp = WindFarmPOMDP(wfparams.nx, wfparams.ny, wfparams.grid_dist, wfparams.altitudes, no_of_sensors, delta)
 
 # Get initial belief distribution and initial state
-b0 = initialize_belief_no_prior(wfparams)
+b0 = initialize_belief_lookup(wfparams)
 s0 = initialize_state(b0, wfparams)
 
 # Construct Belief Updater
@@ -42,8 +42,8 @@ for (s, a, r, o, b, t, sp, bp) in stepthrough(pomdp, policy, up, b0, s0, "s,a,r,
     push!(belief_history, bp)
 end
 
-script_id = :solve_windfarm_greedy_nopriorbelief
-# plot_WindFarmPOMDP_policy!(script_id, wfparams, actions_history, rewards_history, b0)
+script_id = :solve_windfarm_greedy_lookupbelief
+plot_WindFarmPOMDP_policy!(script_id, wfparams, actions_history, rewards_history, b0)
 
 # @time _, info = action_info(planner, b0, tree_in_info=true)
 # @time _, info = action_info(planner, b0, tree_in_info=true)

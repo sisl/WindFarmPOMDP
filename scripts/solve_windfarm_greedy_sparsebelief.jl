@@ -1,5 +1,5 @@
-using POMDPs, POMDPModelTools, POMDPSimulators, POMDPPolicies, POMDPModelTools
-using BasicPOMCP, ARDESPOT, POMCPOW
+using POMDPs, POMDPModelTools, POMDPSimulators, POMDPPolicies
+using BasicPOMCP, POMCPOW
 # using D3Trees, ProfileView
 
 include("../src/windfarmpomdp.jl")
@@ -20,7 +20,7 @@ s0 = initialize_state(b0, wfparams)
 up = WindFarmBeliefUpdater(wfparams.altitudes, wfparams.grid_dist)
 
 # Define Solver
-policy = WindFarmGreedyPolicy(pomdp)
+policy = WindFarmUCBPolicy(pomdp)
 
 
 println("### Starting Stepthrough ###")

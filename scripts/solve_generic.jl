@@ -12,8 +12,8 @@ The user should pass in the the following arguments in the Terminal.
 using Distributed
 println("### Number of workers: $(nworkers())")
 
-using POMDPs, POMDPModelTools, POMDPSimulators, POMDPPolicies, POMDPModelTools
-using BasicPOMCP, ARDESPOT, POMCPOW
+using POMDPs, POMDPModelTools, POMDPSimulators, POMDPPolicies
+using BasicPOMCP, POMCPOW
 using DelimitedFiles
 
 include("../src/windfarmpomdp.jl")

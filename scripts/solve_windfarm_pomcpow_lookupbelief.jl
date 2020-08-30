@@ -1,11 +1,10 @@
-using POMDPs, POMDPModelTools, POMDPSimulators, POMDPPolicies, POMDPModelTools
-using BasicPOMCP, ARDESPOT, POMCPOW
+using POMDPs, POMDPModelTools, POMDPSimulators, POMDPPolicies
+using BasicPOMCP, POMCPOW
 # using D3Trees, ProfileView
 
 include("../src/windfarmpomdp.jl")
 include("../src/beliefstates.jl")
 include("../src/windfarm_expertpolicies.jl")
-include("../../windGP/src/utils/mLookup.jl")
 
 # Construct POMDP
 no_of_sensors = 5
@@ -13,7 +12,7 @@ delta = 220 * 4
 wfparams = WindFarmBeliefInitializerParams(nx=20,ny=20)
 pomdp = WindFarmPOMDP(wfparams.nx, wfparams.ny, wfparams.grid_dist, wfparams.altitudes, no_of_sensors, delta)
 
-# Get initial belief distribution (sparse version of GWA data) and initial state
+# Get initial belief distribution and initial state
 b0 = initialize_belief_lookup(wfparams)
 s0 = initialize_state(b0, wfparams)
 
@@ -23,8 +22,6 @@ up = WindFarmBeliefUpdater(wfparams.altitudes, wfparams.grid_dist)
 # Define Solver
 rollout_policy = WindFarmRolloutPolicy(pomdp)
 tree_queries = tree_queries_generic
-# solver = DESPOTSolver(bounds=IndependentBounds(DefaultPolicyLB(RandomSolver()), 0.0, check_terminal=true, consistency_fix_thresh=0.1))
-# solver = POMCPSolver(tree_queries=tree_queries)
 solver = POMCPOWSolver(tree_queries=tree_queries,
                        check_repeat_obs=true, 
                        check_repeat_act=true, 
@@ -43,6 +40,7 @@ function BasicPOMCP.extract_belief(bu::WindFarmRolloutUpdater, node::BeliefNode)
     s = rand(node.tree.sr_beliefs[2].dist)[1]                                       # rand simply extracts here. it is deterministic.
     return initialize_belief_rollout(s)
 end
+
 
 println("### Starting Stepthrough ###")
 global states_history = []
@@ -63,8 +61,8 @@ for (s, a, r, o, b, t, sp, bp) in stepthrough(pomdp, planner, up, b0, s0, "s,a,r
     push!(belief_history, bp)
 end
 
-script_id = :solve_windfarm_pomcpow_sparsebelief
-# plot_WindFarmPOMDP_policy!(script_id, wfparams, actions_history, rewards_history, b0)
+script_id = :solve_windfarm_pomcpow_lookupbelief
+plot_WindFarmPOMDP_policy!(script_id, wfparams, actions_history, rewards_history, b0)
 
 # @time _, info = action_info(planner, b0, tree_in_info=true)
 # @profview _, info = action_info(planner, b0, tree_in_info=true)
