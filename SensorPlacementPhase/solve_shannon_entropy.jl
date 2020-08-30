@@ -7,6 +7,7 @@ using POMDPs, POMDPModelTools, POMDPSimulators, POMDPPolicies
 
 include("../src/windfarmpomdp.jl")
 include("../src/beliefstates.jl")
+include("../src/utils/plot_functions.jl")
 include("../SensorPlacementPhase/shannon_expertpolicy.jl")
 
 # Construct POMDP
