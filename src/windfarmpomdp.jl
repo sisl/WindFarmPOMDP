@@ -16,10 +16,10 @@ include("../../windGP/src/dataparser_SRTM.jl")
 include("../../windGP/src/GPLA.jl")
 include("../../windGP/src/utils/WLK_SEIso.jl")
 include("../../windGP/src/utils/mLookup.jl")
+include("../../windGP/src/utils/misc.jl")
 
 # WindFarmPOMDP scripts
 include("../src/beliefstates.jl")
-include("../src/utils/misc.jl")
 
 
 struct WindFarmPOMDP <: POMDP{WindFarmState, CartesianIndex{3}, AbstractVector}
