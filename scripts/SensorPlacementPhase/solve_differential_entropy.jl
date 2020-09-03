@@ -1,9 +1,9 @@
 """ 
-    Baseline results: Uses Mutual Information (Krause et al.) to place new sensors.
+    Baseline results: Uses Differential Entropy (Herbrich et al.) to place new sensors.
 """
 
 if Threads.nthreads() == 1
-    @warn "You are not running Julia in multiple threads. Aborted.\nRun `export JULIA_NUM_THREADS=16` in Terminal before running script."
+    @warn "You are not running Julia in multiple threads. Aborted.\nRun e.g. `export JULIA_NUM_THREADS=16` in Terminal before running script."
     exit()
 end
 
@@ -13,7 +13,7 @@ using POMDPs, POMDPModelTools, POMDPSimulators, POMDPPolicies
 include("../src/windfarmpomdp.jl")
 include("../src/beliefstates.jl")
 include("../src/utils/plot_functions.jl")
-include("../SensorPlacementPhase/mutualinfo_expertpolicy.jl")
+include("../SensorPlacementPhase/diffentro_expertpolicy.jl")
 
 # Construct POMDP
 no_of_sensors = 5
@@ -29,7 +29,7 @@ s0 = initialize_state(b0, wfparams)
 up = WindFarmBeliefUpdater(wfparams.altitudes, wfparams.grid_dist)
 
 # Define Solver
-policy = MutualInfoPolicy(pomdp)
+policy = DiffEntroPolicy(pomdp)
 
 
 
@@ -52,7 +52,7 @@ for (s, a, r, o, b, t, sp, bp) in stepthrough(pomdp, policy, up, b0, s0, "s,a,r,
     push!(belief_history, bp)
 end
 
-script_id = :solve_mutual_information
+script_id = :solve_differential_entropy
 plot_WindFarmPOMDP_policy!(script_id, wfparams, actions_history, rewards_history, b0)
 
 # @time _, info = action_info(planner, b0, tree_in_info=true)

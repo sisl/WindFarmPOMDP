@@ -2,7 +2,6 @@ using Statistics
 
 """
     ShannonEntropyPolicy{RNG<:AbstractRNG, P<:Union{POMDP,MDP}, U<:Updater}
-an expert policy that is used to select the greediest actions with respect to some Upper Confidence Bounds.
 
 Constructor:
 
