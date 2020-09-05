@@ -15,7 +15,7 @@ using StatsBase
 # windGP repo
 include("../../../windGP/src/windGP.jl")
 
-# SensorPlacementScripts scripts
+# SensorPlacementPhase scripts
 include("./beliefstates.jl")
 include("./windfarmpomdp.jl")
 include("./policies.jl")
