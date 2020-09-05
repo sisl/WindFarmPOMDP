@@ -1,5 +1,3 @@
-using Plots
-
 function save_rewards_to_disk(script_id::Symbol, rewards_history::AbstractArray, savename::String)
     println("### Total Rewards: $(sum(rewards_history)) ###")
     open(savename, "a") do io
@@ -10,7 +8,7 @@ function save_rewards_to_disk(script_id::Symbol, rewards_history::AbstractArray,
     return nothing
 end
 
-function plot_WindFarmPOMDP_policy!(script_id::Symbol, wfparams::WindFarmBeliefInitializerParams, actions_history::AbstractArray, rewards_history::AbstractArray, b0::WindFarmBelief)
+function plot_WindFarmPOMDP_policy!(script_id::Symbol, wfparams::WindFieldBeliefParams, actions_history::AbstractArray, rewards_history::AbstractArray, b0::WindFarmBelief)
     println("### Creating Policy Plots ###")
     nx, ny = wfparams.nx, wfparams.ny
     Map = get_3D_data(wfparams.farm; altitudes=wfparams.altitudes)
@@ -59,7 +57,7 @@ function plot_WindFarmPOMDP_policy!(script_id::Symbol, wfparams::WindFarmBeliefI
     return nothing
 end
 
-function plot_WindFarmPOMDP_belief_history!(wfparams::WindFarmBeliefInitializerParams, actions_history::AbstractArray, belief_history::AbstractArray, b0::WindFarmBelief)
+function plot_WindFarmPOMDP_belief_history!(wfparams::WindFieldBeliefParams, actions_history::AbstractArray, belief_history::AbstractArray, b0::WindFarmBelief)
     println("### Creating Policy Plots ###")
     nx, ny = wfparams.nx, wfparams.ny
     Map = get_3D_data(wfparams.farm; altitudes=wfparams.altitudes)

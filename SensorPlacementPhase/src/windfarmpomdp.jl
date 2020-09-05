@@ -1,27 +1,3 @@
-# Modules
-using POMDPs, POMDPModelTools
-using GaussianProcesses
-using Random
-using Distributions
-using Discretizers
-using Parameters
-using ProgressBars
-using DelimitedFiles
-using Dates
-using ImageTransformations
-
-# windGP scripts
-include("../../windGP/src/dataparser_GWA.jl")
-include("../../windGP/src/dataparser_SRTM.jl")
-include("../../windGP/src/GPLA.jl")
-include("../../windGP/src/utils/WLK_SEIso.jl")
-include("../../windGP/src/utils/mLookup.jl")
-include("../../windGP/src/utils/misc.jl")
-
-# WindFarmPOMDP scripts
-include("../src/beliefstates.jl")
-
-
 struct WindFarmPOMDP <: POMDP{WindFarmState, CartesianIndex{3}, AbstractVector}
     nx::Int
     ny::Int
@@ -34,6 +10,7 @@ end
 POMDPs.discount(::WindFarmPOMDP) = 0.9
 POMDPs.isterminal(p::WindFarmPOMDP, s::WindFarmState) = size(s.x_acts, 2) > p.timesteps
 
+"""
 function turbine_layout_heuristic(p::WindFarmPOMDP, s::WindFarmState, gpla_wf::GPLA)
     λ = 1.0    # TODO: Coefficient for estimating profit.
     no_of_turbines = 10   # TODO: Change this?
@@ -57,21 +34,11 @@ function turbine_layout_heuristic(p::WindFarmPOMDP, s::WindFarmState, gpla_wf::G
     best_vals = partialsortperm(vec(LCB), 1:no_of_turbines, rev=true)
     expected_profit = λ * sum(truth_CB[best_vals] .^3)
 
-
-    # @show length(gpla_wf.y)
-    # @show μ[best_vals]
-    # @show σ[best_vals]
-    # @show expected_profit
     return expected_profit
 end
+"""
 
-function get_tower_cost(a)
-    height = a[end]
-    # height < 90 ? 92600.0/116000.0 : 1.0 
-    return height * 10
-end
-
-function get_GPLA_for_gen(X, Y, wfparams::WindFarmBeliefInitializerParams)
+function get_GPLA_for_gen(X, Y, wfparams::WindFieldBeliefParams)
 
     if typeof(b0.gpla_wf.mean) == GaussianProcesses.MeanConst
         gp_mean = MeanConst(wfparams.theta[2])
@@ -95,7 +62,6 @@ end
 function POMDPs.gen(m::WindFarmPOMDP, s::WindFarmState, a0::CartesianIndex{3}, rng::AbstractRNG)
 
     # Transform the action location to Vector
-    # a = expand_action_to_altitudes(a0, m.altitudes)
     a = expand_action_to_below_altitudes(a0, m.altitudes)
     a = CartIndices_to_Array(a)
     
@@ -126,16 +92,12 @@ function POMDPs.gen(m::WindFarmPOMDP, s::WindFarmState, a0::CartesianIndex{3}, r
     sp = WindFarmState(sp_x_acts, sp_x_obs, sp_y_obs, s.x_obs_full, s.y_obs_full)
 
     # Discretize observation to avoid shallow trees
-    # o = encode(LinearDiscretizer(collect(0 : 0.25 : 10)), o)  ## TODO: Use discretized FLoat instead
     o = round.(o * 2)/2   # rounds to nearest 0.5
     
     # Get reward
     GaussianProcesses.fit!(gpla_wf, sp_x_obs, sp_y_obs) 
-    r = turbine_layout_heuristic(m, sp, gpla_wf) - get_tower_cost(a0)
+    r = get_layout_revenue(sp, gpla_wf, tlparams, wfparams, tlparams.layouttype)
 
-    # @show o
-    # @show a
-    # @show a, o, size(s.x_acts, 2)
     return (sp = sp, o = o, r = r/10000)
 end
 
@@ -157,12 +119,12 @@ end
 
 function POMDPs.actions(p::WindFarmPOMDP)
     """ All possible actions, regardless of history. """
-    permitted_altitudes = p.altitudes       # TODO: Change this?
-    permitted_xy_dists = p.grid_dist        # TODO: Change this?
+    altitudes = p.altitudes
+    grid_dist = p.grid_dist
 
-    x_ranges = 0 : permitted_xy_dists : p.grid_dist * p.nx-1
-    y_ranges = 0 : permitted_xy_dists : p.grid_dist * p.ny-1
-    all_actions = [CartesianIndex(x,y,z) for x in x_ranges for y in y_ranges for z in permitted_altitudes]
+    x_ranges = 0 : grid_dist : grid_dist * p.nx-1
+    y_ranges = 0 : grid_dist : grid_dist * p.ny-1
+    all_actions = [CartesianIndex(x,y,z) for x in x_ranges for y in y_ranges for z in altitudes]
 
     return vec(collect(all_actions))
 end
@@ -191,6 +153,11 @@ function POMDPs.actions(p::WindFarmPOMDP, b::WindFarmBelief)
     return collect(all_actions_Set)
 end
 
+
+####################
+## Expand Actions ##
+####################
+
 expand_action_to_altitudes(a::CartesianIndex, altitudes::AbstractVector) = [CartesianIndex(a[1], a[2], h) for h in altitudes]
 expand_action_to_other_altitudes(a::CartesianIndex, altitudes::AbstractVector) = [CartesianIndex(a[1], a[2], h) for h in setdiff(Set(altitudes),a[3])]
 expand_action_to_below_altitudes(a::CartesianIndex, altitudes::AbstractVector) = [CartesianIndex(a[1], a[2], h) for h in altitudes if h <= a[3]]
@@ -198,6 +165,6 @@ expand_action_to_below_altitudes(a::CartesianIndex, altitudes::AbstractVector) =
 function expand_action_to_limits(a::CartesianIndex, altitudes, grid_dist, delta)
     """ Creates an array of blocked locations (considering both altitude and delta limits), given an action. """
     a1, a2 = a[1], a[2]
-    block = [CartesianIndex(a1+δ1, a2+δ2, h) for h in altitudes for δ1 in -delta:grid_dist:delta for δ2 in -delta:grid_dist:delta]
-    return block
+    blocked = [CartesianIndex(a1+δ1, a2+δ2, h) for h in altitudes for δ1 in -delta:grid_dist:delta for δ2 in -delta:grid_dist:delta]
+    return blocked
 end

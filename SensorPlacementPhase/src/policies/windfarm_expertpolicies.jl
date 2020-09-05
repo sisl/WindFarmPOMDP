@@ -1,5 +1,3 @@
-using StatsBase
-
 """
     WindFarmUCBPolicy{RNG<:AbstractRNG, P<:Union{POMDP,MDP}, U<:Updater}
 an expert policy that is used to select the greediest actions with respect to some Upper Confidence Bounds.
@@ -106,7 +104,7 @@ function POMDPPolicies.action(policy::WindFarmRolloutPolicy, b::WindFarmBelief)
     legal_actions = actions(policy.problem, b)
     best_actions, weights = rolloutExpertPolicy(gpla_wf_rollout, legal_actions)
     # @show weights
-    policy_action = sample(collect(eachcol(best_actions)), Weights(weights))        # sample one candidate action w.r.t weights.
+    policy_action = StatsBase.sample(collect(eachcol(best_actions)), Weights(weights))        # sample one candidate action w.r.t weights.
     return Vector_to_CartIndices(policy_action)
 end
 

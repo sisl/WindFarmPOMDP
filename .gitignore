@@ -2,7 +2,9 @@
 .vscode
 /Manifest.toml
 /dev/
-/scripts/Figures/
-/scripts/Generic_Run_Results/
+SensorPlacementPhase/scripts/Figures/
+SensorPlacementPhase/scripts/Generic_Run_Results/
+TurbinePlacementPhase/scripts/Figures/
+TurbinePlacementPhase/scripts/Generic_Run_Results/
 *.pdf
 *.png

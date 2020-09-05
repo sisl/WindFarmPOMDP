@@ -1,5 +1,3 @@
-using Statistics
-
 """
     MutualInfoPolicy{RNG<:AbstractRNG, P<:Union{POMDP,MDP}, U<:Updater}
 
@@ -96,7 +94,7 @@ function greedyMutualInfoPolicy(gpla_wf::GPLA, legal_actions::AbstractArray, pom
         return legal_actions[:, best_vals]
     else
         best_actions = legal_actions[:, best_vals]
-        centroid = Statistics.mean(legal_actions, dims=2)
+        centroid = StatsBase.mean(legal_actions, dims=2)
         dists_to_centroid = euclidean_dist.(eachcol(best_actions), Ref(centroid))
 
         closest_action = best_actions[:, argmin(dists_to_centroid)]

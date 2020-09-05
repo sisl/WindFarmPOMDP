@@ -34,7 +34,7 @@ function POMDPs.update(bu::WindFarmBeliefUpdater, old_b::WindFarmBelief, a::Cart
     return WindFarmBelief(x_acts, gpla_wf)
 end
 
-@with_kw struct WindFarmBeliefInitializerParams
+@with_kw struct WindFieldBeliefParams
     # Parsing Farm Data
     farm = "AltamontCA"
     grid_dist = 220
@@ -65,7 +65,7 @@ function initialize_belief_rollout(s::WindFarmState)
     return WindFarmBelief(x_acts, gpla_wf)
 end
 
-function initialize_belief_sparse(wfparams::WindFarmBeliefInitializerParams)
+function initialize_belief_sparse(wfparams::WindFieldBeliefParams)
 
     # Load prior points for belief GP
     Map = get_3D_data(wfparams.farm; altitudes=wfparams.altitudes)
@@ -81,7 +81,7 @@ function initialize_belief_sparse(wfparams::WindFarmBeliefInitializerParams)
     return WindFarmBelief(x_acts, gpla_wf)
 end
 
-function initialize_belief_noisy(wfparams::WindFarmBeliefInitializerParams, windNoise::Number)
+function initialize_belief_noisy(wfparams::WindFieldBeliefParams, windNoise::Number)
 
     # Load prior points for belief GP
     Map = get_3D_data(wfparams.farm; altitudes=wfparams.altitudes)
@@ -102,7 +102,7 @@ function initialize_belief_noisy(wfparams::WindFarmBeliefInitializerParams, wind
     return WindFarmBelief(x_acts, gpla_wf)
 end
 
-function initialize_belief_no_prior(wfparams::WindFarmBeliefInitializerParams)
+function initialize_belief_no_prior(wfparams::WindFieldBeliefParams)
 
     # Load prior points for belief GP
     X_obs = reshape(Float64[],3,0)
@@ -117,7 +117,7 @@ function initialize_belief_no_prior(wfparams::WindFarmBeliefInitializerParams)
     return WindFarmBelief(x_acts, gpla_wf)
 end
 
-function initialize_belief_lookup(wfparams::WindFarmBeliefInitializerParams; SCALE_FACTOR=4::Int)
+function initialize_belief_lookup(wfparams::WindFieldBeliefParams; SCALE_FACTOR=4::Int)
     """ This version has no observation points in the Gaussian prior, but instead, we the mean function of the GP is 
         a lookup table of the downsampled version of the GWA data of the specified altitudes.
     """
@@ -161,7 +161,7 @@ function initialize_belief_lookup(wfparams::WindFarmBeliefInitializerParams; SCA
     return WindFarmBelief(x_acts, gpla_wf)
 end
 
-function initialize_state(b0::WindFarmBelief, wfparams::WindFarmBeliefInitializerParams)
+function initialize_state(b0::WindFarmBelief, wfparams::WindFieldBeliefParams)
     """ Called only once when the initial state is created. Assumes full knowledge of field. Should only be used with tree search methods. """
     Map = get_3D_data(wfparams.farm; altitudes=wfparams.altitudes)
     x_acts = reshape(Float64[],3,0)
