@@ -12,8 +12,8 @@ using Plots
 using ImageTransformations
 using StatsBase
 
-# windGP repo
-include("../../../windGP/src/windGP.jl")
+# WindGP repo
+include("../../../WindGP/src/WindGP.jl")
 
 # SensorPlacementPhase scripts
 include("./beliefstates.jl")

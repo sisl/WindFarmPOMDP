@@ -2,9 +2,10 @@
 using POMDPs
 using Parameters
 using LinearAlgebra: norm
+using Evolutionary
 
-# windGP repo
-include("../../../windGP/src/windGP.jl")
+# WindGP repo
+include("../../../WindGP/src/WindGP.jl")
 
 # TurbinePlacementPhase scripts
 include("./common.jl")
