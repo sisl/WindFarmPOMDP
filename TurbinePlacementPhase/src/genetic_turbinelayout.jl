@@ -11,8 +11,7 @@ function turbine_profit(locs , X_field, gpla_wf, tlparams)
     cost = get_turbine_cost.(eachcol(x_turbines))
     power = get_power_production.(μ, Ref(tlparams))
 
-    result = sum(power .- cost)
-    # @show result
+    result = sum(power .- cost) - 1000 * sum(is_solution_separated_Int(x_turbines, tlparams))
     return Int(round(result))
 end
 
@@ -38,7 +37,7 @@ function get_turbine_layout(gpla_wf::GPLA, tlparams::TurbineLayoutParams, wfpara
     lc, uc = [0.0], [0.0]
 
     cb = Evolutionary.ConstraintBounds(lx,ux,lc,uc)
-    constraints = MixedTypePenaltyConstraints(PenaltyConstraints(1e3, cb, x -> cons(x, X_field)), tc)
+    constraints = MixedTypePenaltyConstraints(PenaltyConstraints([1e3], cb, x -> cons(x, X_field)), tc)
 
     opts = Evolutionary.Options(iterations=1000, abstol=1e-5)
     mthd = GA(populationSize=1000, crossoverRate=0.8, mutationRate=0.1, selection=sus, crossover=Evolutionary.uniform)
