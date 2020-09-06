@@ -8,7 +8,7 @@ function extract_policy_method(pomdp, solvermethod)
         :entropy        => ShannonEntropyPolicy,
         :mutualinfo     => MutualInfoPolicy,
         :diffentro      => DiffEntroPolicy
-        )
+    )
 
     return policy_dict[solvermethod](pomdp)
 end

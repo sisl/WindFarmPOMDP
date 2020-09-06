@@ -18,7 +18,7 @@ function turbine_layout_heuristic(p::WindFarmPOMDP, s::WindFarmState, gpla_wf::G
     X_field = CartIndices_to_Array(POMDPs.actions(p, s))
     μ, σ² = GaussianProcesses.predict_f(gpla_wf, X_field)
     σ = sqrt.(σ²)
-    N = length(gpla_wf.y)
+    N = max(1, length(gpla_wf.y))
 
     z_value = 1.645   # chosen: 90 percent confidence interval
     
@@ -96,7 +96,7 @@ function POMDPs.gen(m::WindFarmPOMDP, s::WindFarmState, a0::CartesianIndex{3}, r
     
     # Get reward
     GaussianProcesses.fit!(gpla_wf, sp_x_obs, sp_y_obs) 
-    r = get_layout_revenue(sp, gpla_wf, tlparams, wfparams, tlparams.layouttype)
+    r = get_layout_revenue(sp, gpla_wf, tlparams, wfparams)
 
     return (sp = sp, o = o, r = r/10000)
 end

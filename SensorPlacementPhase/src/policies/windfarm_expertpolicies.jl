@@ -28,7 +28,7 @@ function greedyUCBPolicy(gpla_wf::GPLA, legal_actions::AbstractArray)
 
     μ, σ² = GaussianProcesses.predict_f(gpla_wf, legal_actions)
     σ = sqrt.(σ²)
-    N = length(gpla_wf.y)
+    N = max(1, length(gpla_wf.y))
 
     z_value = 1.645   # chosen: 90 percent confidence interval
     UCB = μ + z_value / sqrt(N) * σ

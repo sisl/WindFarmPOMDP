@@ -13,7 +13,7 @@ function get_turbine_layout(gpla_wf::GPLA, tlparams::TurbineLayoutParams, wfpara
     expected_profit = Float64[]
 
     while no_of_turbines > 0
-        X_field = remove_seperated_locations(x_turbines, X_field, tlparams)
+        X_field = remove_seperated_locations(X_field, x_turbines, tlparams)
 
         next_turbine, next_profit = get_next_turbine_location(gpla_wf, X_field, tlparams, layouttype)
 
@@ -30,7 +30,7 @@ function get_next_turbine_location(gpla_wf, X_field, tlparams, layouttype::Greed
 
     μ, σ² = GaussianProcesses.predict_f(gpla_wf, X_field)
     σ = sqrt.(σ²)
-    N = length(gpla_wf.y)
+    N = max(1, length(gpla_wf.y))
 
     z_value = 1.645    # chosen: 90 percent confidence interval
     LCB = μ - z_value / sqrt(N) * σ
