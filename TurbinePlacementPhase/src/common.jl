@@ -28,17 +28,17 @@ end
 function TurbineLayoutParams(layoutfinder::Symbol)
     layout_dict = Dict(
         :greedy        => GreedyTurbineLayout,
-        )
+    )
 
     layouttype = layout_dict[layoutfinder]()
 
     return TurbineLayoutParams(layouttype=layouttype)
 end
 
-function get_seperation_heuristic(xi, xj, ui, uj)
-
+function get_seperation_heuristic(xi, xj, ui, uj, turbine_diameter)
+""" Find the minimum required distance for two coordinates to be out of each others' wake seperation regions. """ 
     # Use ηmin = 3D and ηmax = 10D, as commonly done.
-    ηmin, ηmax = [3, 10] .* tlparams.turbine_diameter
+    ηmin, ηmax = [3, 10] .* turbine_diameter
 
     vij = 0.5 * (ui + uj)
     dij = xi - xj
@@ -47,14 +47,62 @@ function get_seperation_heuristic(xi, xj, ui, uj)
     return ηij
 end
 
-function remove_seperated_locations(x_turbines, X_field, tlparams)
+function is_solution_separated(x_turbines, tlparams)
+""" Check if any point in `x_turbines` are inside another's seperation region. """ 
     ui = uj = tlparams.wind_direction
+    dia = tlparams.turbine_diameter
+    idx_set = collect(1:size(x_turbines, 2))
+
+    if isempty(x_turbines)
+        return false
+    else
+        for (idx, xi) in enumerate(eachcol(x_turbines))
+            idx_complement = setdiff(idx_set, collect(1:idx))
+            x_turbines_complement = x_turbines[:, idx_complement]
+            η = get_seperation_heuristic.(Ref(xi), eachcol(x_turbines_complement), Ref(ui), Ref(uj), Ref(dia))
+            d = euclidean_dist.(Ref(xi), eachcol(x_turbines_complement))
+            all(η .< d) ? nothing : return true
+        end
+    end
+
+    return false    # return false if solution is NOT separated.
+end
+
+
+function is_solution_separated_Int(x_turbines, tlparams)
+""" Check if any point in `x_turbines` are inside another's seperation region. Returns number of placements under seperation. """ 
+    ui = uj = tlparams.wind_direction
+    dia = tlparams.turbine_diameter
+    idx_set = collect(1:size(x_turbines, 2))
+
+    if isempty(x_turbines)
+        return 0
+    else
+        sep = 0
+        for (idx, xi) in enumerate(eachcol(x_turbines))
+            idx_complement = setdiff(idx_set, collect(1:idx))
+            x_turbines_complement = x_turbines[:, idx_complement]
+            η = get_seperation_heuristic.(Ref(xi), eachcol(x_turbines_complement), Ref(ui), Ref(uj), Ref(dia))
+            d = euclidean_dist.(Ref(xi), eachcol(x_turbines_complement))
+            sep = sep + sum(η .≥ d) 
+        end
+        return sep
+    end
+end
+
+    
+function remove_seperated_locations(X_field, x_turbines, tlparams)
+""" Remove the locations in `X_field` that are effected by the seperation region of any point in `x_turbines`.
+    This reduces the turbine placement action space. """
+
+    ui = uj = tlparams.wind_direction
+    dia = tlparams.turbine_diameter
 
     if isempty(x_turbines)
         nothing
     else
         for xi in eachcol(x_turbines)
-            η = get_seperation_heuristic.(Ref(xi), eachcol(X_field), Ref(ui), Ref(uj))
+            η = get_seperation_heuristic.(Ref(xi), eachcol(X_field), Ref(ui), Ref(uj), Ref(dia))
             d = euclidean_dist.(Ref(xi), eachcol(X_field))
             X_field = X_field[:, η .< d]
         end
@@ -65,6 +113,7 @@ function remove_seperated_locations(x_turbines, X_field, tlparams)
 end
 
 function find_same_coordinate_locations(xi, X_field)
+""" Find the locations in `X_field` that are in the same coordinate as `xi`. """
     result = []
 
     for (idx, xj) in enumerate(eachcol(X_field))
@@ -76,22 +125,26 @@ function find_same_coordinate_locations(xi, X_field)
 end
 
 function remove_same_coordinate_locations(X_field, x_turbines)
+""" Remove the locations in `X_field` that are in the same coordinate with any of the locations in `x_turbines`. """
     locs = find_same_coordinate_locations.(eachcol(x_turbines), Ref(X_field))
     locs_complement = setdiff(collect(1:size(X_field, 2)), vcat(locs...))
     return X_field[:, locs_complement]
 end
 
 function get_tower_cost(a)
+""" Get the cost of a single mast (sensor) tower. """
     height = a[end]
     return height * tlparams.temporary_mast_cost    # TODO: Change this?
 end
 
 function get_turbine_cost(a)
+""" Get the cost of a single turbine. """
     height = a[end]
     return height * tlparams.turbine_cost
 end
 
 function turbine_action_space(tlparams::TurbineLayoutParams, wfparams::WindFieldBeliefParams)
+""" Get the entire action space for possible turbine placements. """
     altitudes = tlparams.altitudes
     grid_dist = tlparams.grid_dist
 
@@ -103,7 +156,7 @@ function turbine_action_space(tlparams::TurbineLayoutParams, wfparams::WindField
 end
 
 function get_layout_revenue(sp::WindFarmState, gpla_wf::GPLA, tlparams::TurbineLayoutParams, wfparams::WindFieldBeliefParams, layouttype::TurbineLayoutType)
-
+""" Calculate approximate revenue of a turbine layout. """
     # Cost of sensor tower placements
     x_sensors = sp.x_acts
     cost_masts = get_tower_cost.(eachcol(x_sensors))
@@ -119,7 +172,24 @@ function get_layout_revenue(sp::WindFarmState, gpla_wf::GPLA, tlparams::TurbineL
     return total_revenue
 end
 
+get_layout_revenue(sp::WindFarmState, gpla_wf::GPLA, tlparams::TurbineLayoutParams, wfparams::WindFieldBeliefParams) = get_layout_revenue(sp, gpla_wf, tlparams, wfparams, tlparams.layouttype)
+
 function get_power_production(ui, tlparams)
+""" Calculate approximate power production, given a wind speed. """
     λ = 1.0    # TODO: Coefficient for estimating profit.
     return λ * ui^3
+end
+
+function get_random_init_solution(X_field, no_of_turbines, tlparams)
+""" Returns a random initial valid turbine placement layout. """ 
+    x_turbines_init = reshape(Float64[], 3, 0)
+    is_separated = true
+    locs = zeros(no_of_turbines)
+
+    while is_separated
+        locs = rand(1:size(X_field, 2), no_of_turbines)
+        x_turbines_init = X_field[:, locs]
+        is_separated = is_solution_separated(x_turbines_init, tlparams)
+    end
+    return x_turbines_init, locs
 end
