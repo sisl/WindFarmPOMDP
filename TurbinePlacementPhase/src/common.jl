@@ -37,14 +37,18 @@ end
 
 function get_seperation_heuristic(xi, xj, ui, uj, turbine_diameter)
 """ Find the minimum required distance for two coordinates to be out of each others' wake seperation regions. """ 
+    
     # Use ηmin = 3D and ηmax = 10D, as commonly done.
     ηmin, ηmax = [3, 10] .* turbine_diameter
 
-    vij = 0.5 * (ui + uj)
-    dij = xi - xj
-    ηij = ηmin + (ηmax - ηmin) * norm(dot_product(dij, vij)) / norm(dij) / norm(vij)
-
-    return ηij
+    if view(xi, 1:2) == view(xj, 1:2) 
+        return ηmax
+    else
+        vij = 0.5 * (ui + uj)
+        dij = xi - xj
+        ηij = ηmin + (ηmax - ηmin) * norm(dot_product(dij, vij)) / norm(dij) / norm(vij)
+        return ηij
+    end
 end
 
 function is_solution_separated(x_turbines, tlparams)
@@ -68,7 +72,6 @@ function is_solution_separated(x_turbines, tlparams)
     return false    # return false if solution is NOT separated.
 end
 
-
 function is_solution_separated_Int(x_turbines, tlparams)
 """ Check if any point in `x_turbines` are inside another's seperation region. Returns number of placements under seperation. """ 
     ui = uj = tlparams.wind_direction
@@ -89,7 +92,6 @@ function is_solution_separated_Int(x_turbines, tlparams)
         return sep
     end
 end
-
     
 function remove_seperated_locations(X_field, x_turbines, tlparams)
 """ Remove the locations in `X_field` that are effected by the seperation region of any point in `x_turbines`.
@@ -178,6 +180,20 @@ function get_power_production(ui, tlparams)
 """ Calculate approximate power production, given a wind speed. """
     λ = 1.0    # TODO: Coefficient for estimating profit.
     return λ * ui^3
+end
+
+function turbine_approximate_profit(locs::AbstractVector, X_field, gpla_wf, tlparams)
+    x_turbines = X_field[:, locs]
+    return turbine_approximate_profit(x_turbines, X_field, gpla_wf, tlparams)
+end
+
+function turbine_approximate_profit(x_turbines::AbstractMatrix, X_field, gpla_wf, tlparams)
+    μ, _ = GaussianProcesses.predict_f(gpla_wf, x_turbines)
+    cost = get_turbine_cost.(eachcol(x_turbines))
+    power = get_power_production.(μ, Ref(tlparams))
+
+    result = sum(power .- cost) - 1000 * sum(is_solution_separated_Int(x_turbines, tlparams))
+    return Int(round(result))
 end
 
 function get_random_init_solution(X_field, no_of_turbines, tlparams)
