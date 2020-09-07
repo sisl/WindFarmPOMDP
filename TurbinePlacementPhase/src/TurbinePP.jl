@@ -1,10 +1,7 @@
 # Modules
-using POMDPs
-using Parameters
 using LinearAlgebra: norm
+using Parameters
 using Evolutionary
-using Distributions
-using NearestNeighbors
 
 # WindGP repo
 include("../../../WindGP/src/WindGP.jl")
