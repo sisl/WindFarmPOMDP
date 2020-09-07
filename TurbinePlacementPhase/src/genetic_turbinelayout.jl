@@ -4,17 +4,6 @@
 
 struct GeneticTurbineLayout <: TurbineLayoutType end
 
-function turbine_profit(locs , X_field, gpla_wf, tlparams)
-
-    x_turbines = X_field[:, locs]
-    μ, _ = GaussianProcesses.predict_f(gpla_wf, x_turbines)
-    cost = get_turbine_cost.(eachcol(x_turbines))
-    power = get_power_production.(μ, Ref(tlparams))
-
-    result = sum(power .- cost) - 1000 * sum(is_solution_separated_Int(x_turbines, tlparams))
-    return Int(round(result))
-end
-
 function get_turbine_layout(gpla_wf::GPLA, tlparams::TurbineLayoutParams, wfparams::WindFieldBeliefParams, layouttype::GeneticTurbineLayout)
     
     no_of_turbines = tlparams.no_of_turbines
@@ -41,13 +30,14 @@ function get_turbine_layout(gpla_wf::GPLA, tlparams::TurbineLayoutParams, wfpara
 
     opts = Evolutionary.Options(iterations=1000, abstol=1e-5)
     mthd = GA(populationSize=1000, crossoverRate=0.8, mutationRate=0.1, selection=sus, crossover=Evolutionary.uniform)
+    obj_func = x -> - turbine_approximate_profit(x, X_field, gpla_wf, tlparams)    # Note the negative sign, since GA is a minimizer.
 
 
-    GA_result = Evolutionary.optimize(x -> - turbine_profit(x, X_field, gpla_wf, tlparams),
-                                constraints,
-                                init_locs,
-                                mthd,
-                                opts
+    GA_result = Evolutionary.optimize(obj_func,
+                                      constraints,
+                                      init_locs,
+                                      mthd,
+                                      opts
     )
     
     x_turbines = X_field[:, GA_result.minimizer]

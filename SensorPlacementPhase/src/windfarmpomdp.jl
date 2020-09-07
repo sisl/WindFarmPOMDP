@@ -109,7 +109,7 @@ function POMDPModelTools.obs_weight(p::WindFarmPOMDP, s::WindFarmState, a::Carte
     μ, σ² = GaussianProcesses.predict_f(gpla_wf, a)
     σ = sqrt.(σ²)
     
-    return Distributions.pdf(Normal(μ..., σ...), average(o))
+    return Distributions.pdf(Normal(μ..., σ...), mean(o))
 end
 
 

@@ -8,21 +8,17 @@ function get_turbine_layout(gpla_wf::GPLA, tlparams::TurbineLayoutParams, wfpara
     
     no_of_turbines = tlparams.no_of_turbines
     X_field = CartIndices_to_Array(turbine_action_space(tlparams, wfparams))
-    
+
     x_turbines = reshape(Float64[], 3, 0)
-    expected_profit = Float64[]
 
     while no_of_turbines > 0
         X_field = remove_seperated_locations(X_field, x_turbines, tlparams)
-
-        next_turbine, next_profit = get_next_turbine_location(gpla_wf, X_field, tlparams, layouttype)
-
+        next_turbine = get_next_turbine_location(gpla_wf, X_field, tlparams, layouttype)
         x_turbines = hcat(x_turbines, next_turbine)
-        push!(expected_profit, next_profit)
-
         no_of_turbines = no_of_turbines - 1
     end
 
+    expected_profit = turbine_approximate_profit(x_turbines, X_field, gpla_wf, tlparams)
     return x_turbines, expected_profit
 end
 
@@ -37,7 +33,6 @@ function get_next_turbine_location(gpla_wf, X_field, tlparams, layouttype::Greed
     best_val = argmax(vec(LCB))
 
     next_turbine = X_field[:, best_val]
-    next_profit = get_power_production(vec(LCB)[best_val], tlparams)
 
-    return next_turbine, next_profit
+    return next_turbine
 end
