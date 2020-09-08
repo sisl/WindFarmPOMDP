@@ -18,8 +18,8 @@ function get_turbine_layout(gpla_wf::GPLA, tlparams::TurbineLayoutParams, wfpara
         no_of_turbines = no_of_turbines - 1
     end
 
-    expected_profit = turbine_approximate_profit(x_turbines, X_field, gpla_wf, tlparams)
-    return x_turbines, expected_profit
+    expected_revenue = turbine_approximate_profits(x_turbines, X_field, gpla_wf, tlparams)
+    return x_turbines, expected_revenue
 end
 
 function get_next_turbine_location(gpla_wf, X_field, tlparams, layouttype::GreedyTurbineLayout)

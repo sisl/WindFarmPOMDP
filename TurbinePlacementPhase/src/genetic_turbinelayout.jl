@@ -28,9 +28,9 @@ function get_turbine_layout(gpla_wf::GPLA, tlparams::TurbineLayoutParams, wfpara
     cb = Evolutionary.ConstraintBounds(lx,ux,lc,uc)
     constraints = MixedTypePenaltyConstraints(PenaltyConstraints([1e3], cb, x -> cons(x, X_field)), tc)
 
-    opts = Evolutionary.Options(iterations=1000, abstol=1e-5)
+    opts = Evolutionary.Options(iterations=500, abstol=1e-5)
     mthd = GA(populationSize=1000, crossoverRate=0.8, mutationRate=0.1, selection=sus, crossover=Evolutionary.uniform)
-    obj_func = x -> - turbine_approximate_profit(x, X_field, gpla_wf, tlparams)    # Note the negative sign, since GA is a minimizer.
+    obj_func = x -> - turbine_approximate_profits(x, X_field, gpla_wf, tlparams)    # Note the negative sign, since GA is a minimizer.
 
 
     GA_result = Evolutionary.optimize(obj_func,
@@ -41,6 +41,6 @@ function get_turbine_layout(gpla_wf::GPLA, tlparams::TurbineLayoutParams, wfpara
     )
     
     x_turbines = X_field[:, GA_result.minimizer]
-    expected_profit = - GA_result.minimum
-    return x_turbines, expected_profit
+    expected_revenue = - GA_result.minimum
+    return x_turbines, expected_revenue
 end

@@ -2,6 +2,7 @@
 using LinearAlgebra: norm
 using Parameters
 using Evolutionary
+using Polynomials
 
 # WindGP repo
 include("../../../WindGP/src/WindGP.jl")

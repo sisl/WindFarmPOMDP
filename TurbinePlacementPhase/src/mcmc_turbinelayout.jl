@@ -12,7 +12,7 @@ function get_turbine_layout(gpla_wf::GPLA, tlparams::TurbineLayoutParams, wfpara
     
     no_of_trials = 100
     no_of_iterations = 100    # per trial
-    obj_func = x -> turbine_approximate_profit(x, X_field, gpla_wf, tlparams)
+    obj_func = x -> turbine_approximate_profits(x, X_field, gpla_wf, tlparams)
     
     best_state = reshape(Float64[], 3, 0)
     best_state_val = 0.0
@@ -34,6 +34,6 @@ function get_turbine_layout(gpla_wf::GPLA, tlparams::TurbineLayoutParams, wfpara
         no_of_trials = no_of_trials - 1
     end
 
-    expected_profit = obj_func(best_state)
-    return x_turbines, expected_profit
+    expected_revenue = obj_func(best_state)
+    return best_state, expected_revenue
 end

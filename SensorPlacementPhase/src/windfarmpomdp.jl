@@ -10,34 +10,6 @@ end
 POMDPs.discount(::WindFarmPOMDP) = 0.9
 POMDPs.isterminal(p::WindFarmPOMDP, s::WindFarmState) = size(s.x_acts, 2) > p.timesteps
 
-"""
-function turbine_layout_heuristic(p::WindFarmPOMDP, s::WindFarmState, gpla_wf::GPLA)
-    λ = 1.0    # TODO: Coefficient for estimating profit.
-    no_of_turbines = 10   # TODO: Change this?
-    
-    X_field = CartIndices_to_Array(POMDPs.actions(p, s))
-    μ, σ² = GaussianProcesses.predict_f(gpla_wf, X_field)
-    σ = sqrt.(σ²)
-    N = max(1, length(gpla_wf.y))
-
-    z_value = 1.645   # chosen: 90 percent confidence interval
-    
-    if !isempty(s.y_obs_full)
-        Map = get_3D_data(wfparams.farm; altitudes=wfparams.altitudes)
-        Y_field = get_Y_from_farm_location.(eachcol(X_field), Ref(Map), Ref(wfparams.grid_dist))
-        truth_CB = μ - z_value * abs.(μ - Y_field)     # penalty for incorrect layout heuristic
-    else
-        truth_CB = μ
-    end
-    
-    LCB = μ - z_value / sqrt(N) * σ
-    best_vals = partialsortperm(vec(LCB), 1:no_of_turbines, rev=true)
-    expected_profit = λ * sum(truth_CB[best_vals] .^3)
-
-    return expected_profit
-end
-"""
-
 function get_GPLA_for_gen(X, Y, wfparams::WindFieldBeliefParams)
 
     if typeof(b0.gpla_wf.mean) == GaussianProcesses.MeanConst
@@ -96,7 +68,7 @@ function POMDPs.gen(m::WindFarmPOMDP, s::WindFarmState, a0::CartesianIndex{3}, r
     
     # Get reward
     GaussianProcesses.fit!(gpla_wf, sp_x_obs, sp_y_obs) 
-    r = get_layout_revenue(sp, gpla_wf, tlparams, wfparams)
+    r = get_layout_profit(sp, gpla_wf, tlparams, wfparams)
 
     return (sp = sp, o = o, r = r/10000)
 end
