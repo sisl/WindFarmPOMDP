@@ -1,0 +1,20 @@
+# Wind Speed [m/s] vs Power [kW] curve for GE 2.5-120 turbine.
+# Source: https://en.wind-turbine-models.com/turbines/310-ge-general-electric-ge-2.5-120
+
+3           25
+3.5         89
+4           171
+4.5         269
+5           389
+5.5         533
+6           704
+6.5         906
+7           1136
+7.5         1400
+8           1674
+8.5         1934
+9           2160
+9.5         2316
+10          2416
+10.5        2477
+11          2500

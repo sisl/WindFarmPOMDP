@@ -35,7 +35,7 @@ end
 # Wind Field Belief Parameters
 wfparams = WindFieldBeliefParams(nx=20,ny=20)
 
-# Turbine Layout Hueristic Parameters
+# Turbine Layout Heuristic Parameters
 tlparams = TurbineLayoutParams(layoutfinder)
 
 # Construct POMDP
