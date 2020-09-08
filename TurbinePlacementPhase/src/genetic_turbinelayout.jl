@@ -2,7 +2,12 @@
     Genetic method to heuristically determine optimal turbine layout.
 """
 
-struct GeneticTurbineLayout <: TurbineLayoutType end
+@with_kw struct GeneticTurbineLayout <: TurbineLayoutType
+    no_of_iterations = 500
+    populationSize = 1000
+    crossoverRate = 0.8
+    mutationRate = 0.1
+end
 
 function get_turbine_layout(gpla_wf::GPLA, tlparams::TurbineLayoutParams, wfparams::WindFieldBeliefParams, layouttype::GeneticTurbineLayout)
     
@@ -28,10 +33,16 @@ function get_turbine_layout(gpla_wf::GPLA, tlparams::TurbineLayoutParams, wfpara
     cb = Evolutionary.ConstraintBounds(lx,ux,lc,uc)
     constraints = MixedTypePenaltyConstraints(PenaltyConstraints([1e3], cb, x -> cons(x, X_field)), tc)
 
-    opts = Evolutionary.Options(iterations=500, abstol=1e-5)
-    mthd = GA(populationSize=1000, crossoverRate=0.8, mutationRate=0.1, selection=sus, crossover=Evolutionary.uniform)
-    obj_func = x -> - turbine_approximate_profits(x, X_field, gpla_wf, tlparams)    # Note the negative sign, since GA is a minimizer.
+    opts = Evolutionary.Options(iterations = layouttype.no_of_iterations, abstol = 1e-5)
 
+    mthd = GA(populationSize = layouttype.populationSize,
+              crossoverRate = layouttype.crossoverRate,
+              mutationRate = layouttype.mutationRate,
+              selection = sus,
+              crossover = Evolutionary.uniform
+    )
+
+    obj_func = x -> - turbine_approximate_profits(x, X_field, gpla_wf, tlparams)    # Note the negative sign, since GA is a minimizer.
 
     GA_result = Evolutionary.optimize(obj_func,
                                       constraints,

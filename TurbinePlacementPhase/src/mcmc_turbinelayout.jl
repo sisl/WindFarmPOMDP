@@ -2,7 +2,10 @@
     MCMC method to heuristically determine optimal turbine layout.
 """
 
-struct MCMCTurbineLayout <: TurbineLayoutType end
+@with_kw struct MCMCTurbineLayout <: TurbineLayoutType 
+    no_of_trials = 100
+    no_of_iterations = 100
+end
 
 function get_turbine_layout(gpla_wf::GPLA, tlparams::TurbineLayoutParams, wfparams::WindFieldBeliefParams, layouttype::MCMCTurbineLayout)
 
@@ -10,8 +13,8 @@ function get_turbine_layout(gpla_wf::GPLA, tlparams::TurbineLayoutParams, wfpara
     X_field = CartIndices_to_Array(turbine_action_space(tlparams, wfparams))
 
     
-    no_of_trials = 100
-    no_of_iterations = 100    # per trial
+    no_of_trials = layouttype.no_of_trials
+    no_of_iterations = layouttype.no_of_iterations    # per trial
     obj_func = x -> turbine_approximate_profits(x, X_field, gpla_wf, tlparams)
     
     best_state = reshape(Float64[], 3, 0)

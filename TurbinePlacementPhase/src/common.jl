@@ -7,23 +7,23 @@ abstract type TurbineLayoutType end
 @with_kw struct TurbineLayoutParams
     # Layout params
     layouttype::TurbineLayoutType
-    grid_dist = 220                     # [meters]
-    altitudes = [100, 200]              # [meters]
+    grid_dist = 220                                             # [meters]
+    altitudes = [100, 200]                                      # [meters]
 
     # Wind unit-direction
     wind_direction = [1,1,0]
 
     # Sensor tower specs
-    mast_cost = 2.0e3                   # [USD/meter]
+    mast_cost = 2.0e3                                           # [USD/meter]
 
     # Turbine specs
     no_of_turbines = 10
-    turbine_cost = 4.0e6                # [USD/turbine]
-    turbine_diameter = 120              # [meters]
-    turbine_max_power = 2500            # [kW]
-    turbine_cut_in_speed = 3.0          # [m/s]
-    turbine_rated_speed = 11.0          # [m/s]
-    turbine_power_curve::Polynomial = create_power_curve()    # [kW, given windspeed]
+    turbine_cost = 4.0e6                                        # [USD/turbine]
+    turbine_diameter = 120                                      # [meters]
+    turbine_max_power = 2500                                    # [kW]
+    turbine_cut_in_speed = 3.0                                  # [m/s]
+    turbine_rated_speed = 11.0                                  # [m/s]
+    turbine_power_curve::Polynomial = create_power_curve()      # [kW, given windspeed]
 end
 
 function create_power_curve(poly_degree::Int = 3, data_dir = "../../TurbinePlacementPhase/data/ge_turbine_data.csv")
@@ -37,11 +37,12 @@ end
 
 function TurbineLayoutParams(layoutfinder::Symbol)
     layout_dict = Dict(
-        :greedy        => GreedyTurbineLayout,
+        :greedy         => GreedyTurbineLayout,
+        :genetic        => GeneticTurbineLayout,
+        :mcmc           => MCMCTurbineLayout        
     )
 
     layouttype = layout_dict[layoutfinder]()
-
     return TurbineLayoutParams(layouttype=layouttype)
 end
 
