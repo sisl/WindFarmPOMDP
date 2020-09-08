@@ -21,6 +21,8 @@ abstract type TurbineLayoutType end
     turbine_cost = 4.0e6                # [USD/turbine]
     turbine_diameter = 120              # [meters]
     turbine_max_power = 2500            # [kW]
+    turbine_cut_in_speed = 3.0          # [m/s]
+    turbine_rated_speed = 11.0          # [m/s]
     turbine_power_curve::Polynomial = create_power_curve()    # [kW, given windspeed]
 end
 
@@ -222,6 +224,7 @@ function get_layout_profit(sp::WindFarmState, gpla_wf::GPLA, tlparams::TurbineLa
 end
 
 function turbine_approximate_profits(x_turbines::AbstractMatrix, gpla_wf, tlparams; penalty_cost = 2.0e6)
+""" Approximate sum of profits of individual turbines. """
     μ, _ = GaussianProcesses.predict_f(gpla_wf, x_turbines)
     costs = get_turbine_cost.(eachcol(x_turbines))
 
@@ -241,11 +244,17 @@ function get_turbine_profit(ui, turbine_cost, s_avg, tlparams)
     β = 5.0e-3
     γ = 4
 
-    P∞ = tlparams.turbine_power_curve(ui)
+    P∞ = get_turbine_power_output(ui, tlparams)
     P₁ = tlparams.turbine_max_power
 
     # Calculate the ratio between Revenue and Costs, for a single turbine.
     profit_star = (P∞ / P₁) * γ - (1 + β * s_avg + θ * s_avg^2)
 
     return profit_star * turbine_cost
+end
+
+function get_turbine_power_output(ui, tlparams)
+""" Keeps the power output within reasonable limits. """
+    ui_clamped = clamp(ui, tlparams.turbine_cut_in_speed, tlparams.turbine_rated_speed)
+    return tlparams.turbine_power_curve(ui_clamped)
 end
