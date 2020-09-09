@@ -62,7 +62,7 @@ for (s, a, r, o, b, t, sp, bp) in stepthrough(pomdp, planner, up, b0, s0, "s,a,r
 end
 
 script_id = :solve_windfarm_pomcpow_lookupbelief
-plot_WindFarmPOMDP_policy!(script_id, wfparams, actions_history, rewards_history, b0)
+plot_WindFarmPOMDP_planner!(script_id, wfparams, actions_history, rewards_history, b0)
 
 # @time _, info = action_info(planner, b0, tree_in_info=true)
 # @profview _, info = action_info(planner, b0, tree_in_info=true)

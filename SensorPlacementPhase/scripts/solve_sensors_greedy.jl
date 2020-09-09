@@ -1,21 +1,3 @@
-""" 
-    Baseline Methods for Sensor Placement using a Greedy-Heuristic Approach
-    
-    User Arguments:
-
-    ARGS[1]
-        `solvermethod`      Solver method for sensor placements.
-    Options
-        entropy            Uses Shannon Entropy (Papadopoulou et al.) to place new sensors.    [Does not use turbine layout heuristic.]
-        mutualinfo         Uses Mutual Information (Krause et al.) to place new sensors.       [Does not use turbine layout heuristic.]
-        diffentro          Uses Differential Entropy (Herbrich et al.) to place new sensors.   [Does not use turbine layout heuristic.]
-
-    ARGS[2]
-        `layoutfinder`        Layout type for heuristically determining a turbine layout.
-    Options
-        greedy             Greedily selects turbine locations w.r.t LCB of wind speed.
-"""
-
 if Threads.nthreads() == 1
     @warn "You are not running Julia in multiple threads. Aborted.\nRun e.g. `export JULIA_NUM_THREADS=16` in Terminal before entering Julia environment."
     exit()
@@ -51,7 +33,7 @@ s0 = initialize_state(b0, wfparams)
 up = WindFarmBeliefUpdater(wfparams.altitudes, wfparams.grid_dist)
 
 # Define Solver
-policy = extract_policy_method(pomdp, solvermethod)
+planner = extract_solver_method(pomdp, solvermethod)
 
 
 println("### Starting Stepthrough ###")
@@ -60,7 +42,7 @@ global actions_history = []
 global obs_history = []
 global rewards_history = []
 global belief_history = []
-for (s, a, r, o, b, t, sp, bp) in stepthrough(pomdp, policy, up, b0, s0, "s,a,r,o,b,t,sp,bp", max_steps=no_of_sensors)
+for (s, a, r, o, b, t, sp, bp) in stepthrough(pomdp, planner, up, b0, s0, "s,a,r,o,b,t,sp,bp", max_steps=no_of_sensors)
     # @show s
     @show a
     @show o
@@ -73,7 +55,7 @@ for (s, a, r, o, b, t, sp, bp) in stepthrough(pomdp, policy, up, b0, s0, "s,a,r,
     push!(belief_history, bp)
 end
 
-plot_WindFarmPOMDP_policy!(solvermethod, wfparams, actions_history, rewards_history, b0)
+plot_WindFarmPOMDP_planner!(solvermethod, wfparams, actions_history, rewards_history, b0)
 
 
 # using D3Trees, ProfileView

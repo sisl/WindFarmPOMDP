@@ -3,11 +3,17 @@ include("./policies/mutualinfo_sensorpolicy.jl")
 include("./policies/shannon_sensorpolicy.jl")
 include("./policies/windfarm_expertpolicies.jl")
 
-function extract_policy_method(pomdp, solvermethod)
+include("./policies/pomcpow_sensorplanner.jl")
+
+
+function extract_solver_method(pomdp, solvermethod)
     policy_dict = Dict(
         :entropy        => ShannonEntropyPolicy,
         :mutualinfo     => MutualInfoPolicy,
-        :diffentro      => DiffEntroPolicy
+        :diffentro      => DiffEntroPolicy,
+        # :bayesian       => BayesianPolicy,        # TODO.
+        # :genetic        => GeneticPolicy,         # TODO.
+        :pomcpow        => POMCPOWPolicy
     )
 
     return policy_dict[solvermethod](pomdp)

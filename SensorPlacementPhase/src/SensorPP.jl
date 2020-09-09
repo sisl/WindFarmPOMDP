@@ -1,5 +1,6 @@
 # Modules
 using POMDPs, POMDPModelTools, POMDPSimulators, POMDPPolicies
+using BasicPOMCP, POMCPOW
 using Distributions
 using Discretizers
 using Parameters
