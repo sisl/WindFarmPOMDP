@@ -218,7 +218,7 @@ function get_layout_profit(sp::WindFarmState, gpla_wf::GPLA, tlparams::TurbineLa
 
     # Profit of turbine placements
     x_turbines, _ = get_turbine_layout(gpla_wf, tlparams, wfparams, layouttype)
-    expected_turbine_profits = turbine_approximate_profits(x_turbines, X_field, gpla_wf, tlparams)
+    expected_turbine_profits = turbine_approximate_profits(x_turbines, gpla_wf, tlparams)
 
     total_profit = sum(expected_turbine_profits) - sum(cost_masts)
     return total_profit

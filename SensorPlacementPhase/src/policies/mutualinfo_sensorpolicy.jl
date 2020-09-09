@@ -108,6 +108,6 @@ function POMDPPolicies.action(policy::MutualInfoPolicy, b::WindFarmBelief)
     gpla_wf = b.gpla_wf
     legal_actions = actions(pomdp, b)
     policy_action = greedyMutualInfoPolicy(gpla_wf, legal_actions, pomdp)                      # deterministically choose the best location.
-    @show policy_action
+    # @show policy_action
     return Vector_to_CartIndices(policy_action)
 end

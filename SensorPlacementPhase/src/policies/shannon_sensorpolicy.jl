@@ -57,6 +57,6 @@ function POMDPPolicies.action(policy::ShannonEntropyPolicy, b::WindFarmBelief)
     gpla_wf = b.gpla_wf
     legal_actions = actions(policy.problem, b)
     policy_action = greedyShannonPolicy(gpla_wf, legal_actions)                      # deterministically choose the best location.
-    @show policy_action
+    # @show policy_action
     return Vector_to_CartIndices(policy_action)
 end

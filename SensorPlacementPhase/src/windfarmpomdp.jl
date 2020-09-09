@@ -70,7 +70,7 @@ function POMDPs.gen(m::WindFarmPOMDP, s::WindFarmState, a0::CartesianIndex{3}, r
     GaussianProcesses.fit!(gpla_wf, sp_x_obs, sp_y_obs) 
     r = get_layout_profit(sp, gpla_wf, tlparams, wfparams)
 
-    return (sp = sp, o = o, r = r/10000)
+    return (sp = sp, o = o, r = r/1.0e7/10)    # TODO: Change `10` to be number of turbines. Include it in WindFarmPOMDP.
 end
 
 # P(o|s,a,s')
