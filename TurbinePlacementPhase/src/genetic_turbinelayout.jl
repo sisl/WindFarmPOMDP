@@ -42,7 +42,7 @@ function get_turbine_layout(gpla_wf::GPLA, tlparams::TurbineLayoutParams, wfpara
               crossover = Evolutionary.uniform
     )
 
-    obj_func = x -> - turbine_approximate_profits(x, X_field, gpla_wf, tlparams)    # Note the negative sign, since GA is a minimizer.
+    obj_func = locs -> - turbine_approximate_profits(locs, X_field, gpla_wf, tlparams)    # Note the negative sign, since GA is a minimizer.
 
     GA_result = Evolutionary.optimize(obj_func,
                                       constraints,
