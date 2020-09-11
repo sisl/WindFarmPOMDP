@@ -1,9 +1,9 @@
 """
-    POMCPOWPolicy{RNG<:AbstractRNG, P<:Union{POMDP,MDP}, U<:Updater}
+    POMCPOWPlanner{RNG<:AbstractRNG, P<:Union{POMDP,MDP}, U<:Updater}
 """
-function POMCPOWPolicy(pomdp; tree_queries = 2)          # TODO: Parametrize tree_queries.
+function POMCPOWPlanner(pomdp; tree_queries = 2)          # TODO: Parametrize tree_queries.
 
-    rollout_policy = WindFarmRolloutPolicy(pomdp)
+    rollout_policy = UCBRolloutPolicy(pomdp)
 
     solver = POMCPOWSolver(tree_queries=tree_queries,
                         check_repeat_obs=true, 
@@ -20,7 +20,7 @@ function POMCPOWPolicy(pomdp; tree_queries = 2)          # TODO: Parametrize tre
     return planner
 end
 
-function BasicPOMCP.extract_belief(bu::WindFarmRolloutUpdater, node::BeliefNode)
+function BasicPOMCP.extract_belief(bu::MCTSRolloutUpdater, node::BeliefNode)
     # global GNode = node
     s = rand(node.tree.sr_beliefs[2].dist)[1]    # rand simply extracts here. it is deterministic.
     return initialize_belief_rollout(s)

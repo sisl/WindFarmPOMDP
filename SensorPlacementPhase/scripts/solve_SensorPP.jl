@@ -61,7 +61,7 @@ s0 = initialize_state(b0, wfparams)
 up = WindFarmBeliefUpdater(wfparams.altitudes, wfparams.grid_dist)
 
 # Define Solver
-policy = extract_solver_method(pomdp, solvermethod)
+solver = extract_solver_method(pomdp, solvermethod)
 
 
 println("### Starting Stepthrough ###")
@@ -70,7 +70,7 @@ global belief_history = []
 global actions_history = []
 global obs_history = []
 global rewards_history = []
-for (s, a, r, o, b, t, sp, bp) in stepthrough(pomdp, policy, up, b0, s0, "s,a,r,o,b,t,sp,bp", max_steps=no_of_sensors)
+for (s, a, r, o, b, t, sp, bp) in stepthrough(pomdp, solver, up, b0, s0, "s,a,r,o,b,t,sp,bp", max_steps=no_of_sensors)
     # @show s
     @show a
     @show o

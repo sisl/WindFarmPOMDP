@@ -4,7 +4,7 @@ using BasicPOMCP, POMCPOW
 
 include("../src/windfarmpomdp.jl")
 include("../src/beliefstates.jl")
-include("../src/windfarm_expertpolicies.jl")
+include("../src/policies/pomcpow_expertpolicies.jl")
 
 # Construct POMDP
 no_of_sensors = 5
@@ -20,7 +20,7 @@ s0 = initialize_state(b0, wfparams)
 up = WindFarmBeliefUpdater(wfparams.altitudes, wfparams.grid_dist)
 
 # Define Solver
-rollout_policy = WindFarmRolloutPolicy(pomdp)
+rollout_policy = UCBRolloutPolicy(pomdp)
 tree_queries = tree_queries_generic
 solver = POMCPOWSolver(tree_queries=tree_queries,
                        check_repeat_obs=true, 
@@ -35,7 +35,7 @@ solver = POMCPOWSolver(tree_queries=tree_queries,
 
 planner = solve(solver, pomdp)
 
-function BasicPOMCP.extract_belief(bu::WindFarmRolloutUpdater, node::BeliefNode)
+function BasicPOMCP.extract_belief(bu::MCTSRolloutUpdater, node::BeliefNode)
     # global GNode = node
     s = rand(node.tree.sr_beliefs[2].dist)[1]                                       # rand simply extracts here. it is deterministic.
     return initialize_belief_rollout(s)
