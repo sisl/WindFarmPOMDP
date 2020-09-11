@@ -3,7 +3,7 @@
 """
 
 @with_kw struct MCMCTurbineLayout <: TurbineLayoutType 
-    no_of_trials = 100
+    no_of_trials = 10
     no_of_iterations = 100
 end
 
