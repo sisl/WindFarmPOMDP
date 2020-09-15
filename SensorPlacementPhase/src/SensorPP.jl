@@ -7,6 +7,7 @@ using Parameters
 using Dates
 using Plots
 using ImageTransformations
+using NearestNeighbors
 using StatsBase
 
 # WindGP repo
@@ -16,4 +17,5 @@ include("../../../WindGP/src/WindGP.jl")
 include("./beliefstates.jl")
 include("./windfarmpomdp.jl")
 include("./policies.jl")
+include("./common.jl")
 include("./utils/plot_functions.jl")
