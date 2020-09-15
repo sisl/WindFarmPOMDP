@@ -196,19 +196,17 @@ function get_average_turbine_distances(x_turbines)
     return mean(dists)
 end
 
-# function get_average_turbine_distances_old(x_turbines)
-# """ Calculate the average spacing [meters] between turbines. """
-#     dists = Float64[]
-#     idx_set = collect(1:size(x_turbines, 2))
-#
-#     for (idx, xi) in enumerate(eachcol(x_turbines))
-#         idx_complement = setdiff(idx_set, collect(1:idx))
-#         x_turbines_complement = x_turbines[:, idx_complement]
-#         d = euclidean_dist.(Ref(xi), eachcol(x_turbines_complement))
-#         append!(dists, d)
-#     end
-#     return dists
-# end
+function turbine_approximate_profits(x_turbines::AbstractMatrix, gpla_wf, tlparams; penalty_cost = 2.0e6)
+""" Approximate sum of profits of individual turbines. """
+    μ, _ = GaussianProcesses.predict_f(gpla_wf, x_turbines)
+    costs = get_turbine_cost.(eachcol(x_turbines))
+
+    s_avg = get_average_turbine_distances(x_turbines) / tlparams.turbine_diameter
+    profits = get_turbine_profit.(μ, costs, Ref(s_avg), Ref(tlparams))
+
+    result = sum(profits) - penalty_cost * sum(is_solution_separated_Int(x_turbines, tlparams))    # Penalty added for solutions within seperated regions.
+    return Int(round(result))
+end
 
 function get_layout_profit(sp::WindFarmState, gpla_wf::GPLA, tlparams::TurbineLayoutParams, wfparams::WindFieldBeliefParams, layouttype::TurbineLayoutType)
 """ Calculate approximate profit of a turbine layout. """
@@ -224,20 +222,29 @@ function get_layout_profit(sp::WindFarmState, gpla_wf::GPLA, tlparams::TurbineLa
     return total_profit
 end
 
-function turbine_approximate_profits(x_turbines::AbstractMatrix, gpla_wf, tlparams; penalty_cost = 2.0e6)
-""" Approximate sum of profits of individual turbines. """
-    μ, _ = GaussianProcesses.predict_f(gpla_wf, x_turbines)
-    costs = get_turbine_cost.(eachcol(x_turbines))
+function get_ground_truth_profit(states_history::AbstractArray, tlparams::TurbineLayoutParams, wfparams::WindFieldBeliefParams, layouttype::TurbineLayoutType)
+""" Calculate approximate profit of a turbine layout using ground truth. """
 
-    s_avg = get_average_turbine_distances(x_turbines) / tlparams.turbine_diameter
-    profits = get_turbine_profit.(μ, costs, Ref(s_avg), Ref(tlparams))
+    # Cost of sensor tower placements
+    s_final = states_history[end]
+    x_sensors = s_final.x_acts
+    cost_masts = get_tower_cost.(eachcol(x_sensors))
 
-    result = sum(profits) - penalty_cost * sum(is_solution_separated_Int(x_turbines, tlparams))    # Penalty added for solutions within seperated regions.
-    return Int(round(result))
+    # Get belief and ground truth
+    gpla_wf = get_GPLA_for_gen(s_final.x_obs, s_final.y_obs, wfparams)                      # Latest belief based on previous observations.
+    gpla_wf_full = get_GPLA_for_gen(s_final.x_obs_full, s_final.y_obs_full, wfparams)       # Ground truth.
+
+    # Profit of turbine placements
+    x_turbines, _ = get_turbine_layout(gpla_wf, tlparams, wfparams, layouttype)
+    expected_turbine_profits = turbine_approximate_profits(x_turbines, gpla_wf_full, tlparams)
+
+    total_profit = sum(expected_turbine_profits) - sum(cost_masts)
+    return total_profit
 end
 
-get_layout_profit(sp::WindFarmState, gpla_wf::GPLA, tlparams::TurbineLayoutParams, wfparams::WindFieldBeliefParams) = get_layout_profit(sp, gpla_wf, tlparams, wfparams, tlparams.layouttype)
 turbine_approximate_profits(locs::AbstractVector, X_field, gpla_wf, tlparams) = turbine_approximate_profits(X_field[:, locs], gpla_wf, tlparams)
+get_layout_profit(sp::WindFarmState, gpla_wf::GPLA, tlparams::TurbineLayoutParams, wfparams::WindFieldBeliefParams) = get_layout_profit(sp, gpla_wf, tlparams, wfparams, tlparams.layouttype)
+get_ground_truth_profit(states_history::AbstractArray, tlparams::TurbineLayoutParams, wfparams::WindFieldBeliefParams) = get_ground_truth_profit(states_history, tlparams, wfparams, tlparams.layouttype)
 
 function get_turbine_profit(ui, turbine_cost, s_avg, tlparams)
 """ Follows the heuristic as described in Stevens et al. """

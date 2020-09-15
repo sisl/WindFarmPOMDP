@@ -13,7 +13,7 @@ function get_turbine_layout(gpla_wf::GPLA, tlparams::TurbineLayoutParams, wfpara
 
     while no_of_turbines > 0
         X_field = remove_seperated_locations(X_field, x_turbines, tlparams)
-        next_turbine = get_next_turbine_location(gpla_wf, X_field, tlparams, layouttype)
+        next_turbine = get_next_turbine_location(gpla_wf, X_field, layouttype)
         x_turbines = hcat(x_turbines, next_turbine)
         no_of_turbines = no_of_turbines - 1
     end
@@ -22,7 +22,7 @@ function get_turbine_layout(gpla_wf::GPLA, tlparams::TurbineLayoutParams, wfpara
     return x_turbines, expected_revenue
 end
 
-function get_next_turbine_location(gpla_wf, X_field, tlparams, layouttype::GreedyTurbineLayout)
+function get_next_turbine_location(gpla_wf, X_field, layouttype::GreedyTurbineLayout)
 
     μ, σ² = GaussianProcesses.predict_f(gpla_wf, X_field)
     σ = sqrt.(σ²)
