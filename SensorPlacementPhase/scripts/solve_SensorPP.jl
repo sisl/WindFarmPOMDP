@@ -1,7 +1,7 @@
 """ 
     Sensor Placement Phase
 
-    
+
     User Arguments:
 
     ARGS[1]
@@ -12,7 +12,7 @@
         diffentro           Uses Differential Entropy (Herbrich et al.) to place new sensors.   [Does not use turbine layout heuristic `layoutfinder`.]
         bayesian            TODO.
         genetic             TODO.
-        pomcpow             TODO.
+        pomcpow             Uses the POMCPOW tree-search method (Sunberg et al.) to place new sensors.
 
     ARGS[2]
         `layoutfinder`      Layout type for heuristically determining a turbine layout.
@@ -21,9 +21,17 @@
         genetic             Selects turbine locations with genetic algorithm.                   [Non-sequential]
         mcmc                Selects turbine locations with Metropolis-Hastings MCMC.            [Non-sequential]
 
+    ARGS[3]
+        `actpolicy`         The action branching & rollout policy to be used, if the `solvermethod` is pomcpow.
+    Options
+        UCB                 Uses upper bound of 90% confidence interval over wind speed belief as the policy.
+        MI                  Uses Mutual Information to as the policy.
 
-    Example Call:
+
+    Example Calls:
         `julia solve_SensorPP.jl entropy greedy`
+        `julia solve_SensorPP.jl pomcpow mcmc MI`
+
 """
 
 if Threads.nthreads() == 1
@@ -33,9 +41,15 @@ end
 
 # Parse user Arguments
 if isempty(ARGS)
-    solvermethod, layoutfinder = :entropy, :greedy
+    solvermethod, layoutfinder = :pomcpow, :greedy
 else
-    solvermethod, layoutfinder = Symbol.(ARGS)
+    solvermethod, layoutfinder = Symbol.(ARGS[1:2])
+end
+
+if length(ARGS) < 3
+    actpolicy = :UCB
+else
+    actpolicy = Symbol(ARGS[3])
 end
 
 # Load modules and scripts
@@ -61,7 +75,7 @@ s0 = initialize_state(b0, wfparams)
 up = WindFarmBeliefUpdater(wfparams.altitudes, wfparams.grid_dist)
 
 # Define Solver
-solver = extract_solver_method(pomdp, solvermethod)
+solver = extract_solver_method(pomdp, solvermethod, actpolicy)
 
 
 println("### Starting Stepthrough ###")
@@ -84,7 +98,9 @@ for (s, a, r, o, b, t, sp, bp) in stepthrough(pomdp, solver, up, b0, s0, "s,a,r,
 end
 
 
-# plot_WindFarmPOMDP_planner!(solvermethod, wfparams, actions_history, rewards_history, b0)
+@show RR = get_ground_truth_profit(states_history, tlparams, wfparams)
+
+# plot_WindFarmPOMDP_policy!(solvermethod, wfparams, actions_history, rewards_history, b0)
 
 # using D3Trees, ProfileView
 # @time _, info = action_info(planner, b0, tree_in_info=true)

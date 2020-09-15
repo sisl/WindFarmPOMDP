@@ -22,7 +22,7 @@ end
 DiffEntroPolicy(problem::Union{POMDP,MDP}; rng=Random.GLOBAL_RNG, updater=POMDPPolicies.NothingUpdater()) = DiffEntroPolicy(rng, problem, updater)
 
 
-function greedyDiffEntroPolicy(gpla_wf::GPLA, legal_actions::AbstractArray, pomdp::POMDP)
+function greedyDiffEntroPolicy(gpla_wf::GPLA, legal_actions::AbstractArray, pomdp::WindFarmPOMDP)
     legal_actions = CartIndices_to_Array(legal_actions)
     
     conditional_entropy(σ²) = 0.5 * log(2 * pi * exp(1) * σ²)

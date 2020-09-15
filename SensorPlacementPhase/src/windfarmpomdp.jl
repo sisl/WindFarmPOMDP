@@ -42,12 +42,14 @@ function POMDPs.gen(m::WindFarmPOMDP, s::WindFarmState, a0::CartesianIndex{3}, r
         gpla_wf_full = get_GPLA_for_gen(s.x_obs_full, s.y_obs_full, wfparams)
         gpla_wf = get_GPLA_for_gen(s.x_obs, s.y_obs, wfparams)
         o = rand(gpla_wf_full, a)
+        # gpla_wf = get_GPLA_for_gen(s.x_obs_full, s.y_obs_full, wfparams)
+        # o = rand(gpla_wf, a)
     else
         gpla_wf = get_GPLA_for_gen(s.x_obs, s.y_obs, wfparams)
         o = rand(gpla_wf, a)
     end
 
-    
+
     # Seperate the action's altitude and the observation at that altitude.
     a0_idx = findfirst(x -> x == a0[3], m.altitudes)
     a0 = a[:, a0_idx:a0_idx]
@@ -67,7 +69,7 @@ function POMDPs.gen(m::WindFarmPOMDP, s::WindFarmState, a0::CartesianIndex{3}, r
     o = round.(o * 2)/2   # rounds to nearest 0.5
     
     # Get reward
-    GaussianProcesses.fit!(gpla_wf, sp_x_obs, sp_y_obs) 
+    GaussianProcesses.fit!(gpla_wf, sp_x_obs, sp_y_obs)
     r = get_layout_profit(sp, gpla_wf, tlparams, wfparams)
 
     return (sp = sp, o = o, r = r/1.0e7/10)    # TODO: Change `10` to be number of turbines. Include it in WindFarmPOMDP.
