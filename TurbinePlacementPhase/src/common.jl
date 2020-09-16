@@ -222,8 +222,11 @@ function get_layout_profit(sp::WindFarmState, gpla_wf::GPLA, tlparams::TurbineLa
     return total_profit
 end
 
+turbine_approximate_profits(locs::AbstractVector, X_field, gpla_wf, tlparams) = turbine_approximate_profits(X_field[:, locs], gpla_wf, tlparams)
+get_layout_profit(sp::WindFarmState, gpla_wf::GPLA, tlparams::TurbineLayoutParams, wfparams::WindFieldBeliefParams) = get_layout_profit(sp, gpla_wf, tlparams, wfparams, tlparams.layouttype)
+
 function get_ground_truth_profit(states_history::AbstractArray, tlparams::TurbineLayoutParams, wfparams::WindFieldBeliefParams, layouttype::TurbineLayoutType)
-""" Calculate approximate profit of a turbine layout using ground truth. """
+""" Calculate approximate profit of a turbine layout using ground truth, from the final state. Called after sequential solvers. """
 
     # Cost of sensor tower placements
     s_final = states_history[end]
@@ -242,9 +245,33 @@ function get_ground_truth_profit(states_history::AbstractArray, tlparams::Turbin
     return total_profit
 end
 
-turbine_approximate_profits(locs::AbstractVector, X_field, gpla_wf, tlparams) = turbine_approximate_profits(X_field[:, locs], gpla_wf, tlparams)
-get_layout_profit(sp::WindFarmState, gpla_wf::GPLA, tlparams::TurbineLayoutParams, wfparams::WindFieldBeliefParams) = get_layout_profit(sp, gpla_wf, tlparams, wfparams, tlparams.layouttype)
+function get_ground_truth_profit(s0::WindFarmState, x_sensors::AbstractArray, tlparams::TurbineLayoutParams, wfparams::WindFieldBeliefParams, layouttype::TurbineLayoutType)
+""" Calculate approximate profit of a turbine layout using ground truth, from initial state and solution found. Called after non-sequential solvers. """
+
+    # Get observations
+    x_obs_full = s0.x_obs_full
+    y_obs_full = s0.y_obs_full
+    gpla_wf_full = get_GPLA_for_gen(x_obs_full, y_obs_full, wfparams)
+    x_obs = x_sensors
+    y_obs = rand(gpla_wf_full, x_obs)
+
+    # Cost of sensor tower placements
+    cost_masts = get_tower_cost.(eachcol(x_sensors))
+
+    # Get belief and ground truth
+    gpla_wf = get_GPLA_for_gen(x_obs, y_obs, wfparams)                      # Latest belief based on previous observations.
+    gpla_wf_full = get_GPLA_for_gen(x_obs_full, y_obs_full, wfparams)       # Ground truth.
+
+    # Profit of turbine placements
+    x_turbines, _ = get_turbine_layout(gpla_wf, tlparams, wfparams, layouttype)
+    expected_turbine_profits = turbine_approximate_profits(x_turbines, gpla_wf_full, tlparams)
+
+    total_profit = sum(expected_turbine_profits) - sum(cost_masts)
+    return total_profit
+end
+
 get_ground_truth_profit(states_history::AbstractArray, tlparams::TurbineLayoutParams, wfparams::WindFieldBeliefParams) = get_ground_truth_profit(states_history, tlparams, wfparams, tlparams.layouttype)
+get_ground_truth_profit(s0::WindFarmState, x_sensors::AbstractArray, tlparams::TurbineLayoutParams, wfparams::WindFieldBeliefParams) = get_ground_truth_profit(s0, x_sensors, tlparams, wfparams, tlparams.layouttype)
 
 function get_turbine_profit(ui, turbine_cost, s_avg, tlparams)
 """ Follows the heuristic as described in Stevens et al. """
