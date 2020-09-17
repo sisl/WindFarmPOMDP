@@ -1,18 +1,21 @@
 """
     POMCPOWPlanner{RNG<:AbstractRNG, P<:Union{POMDP,MDP}, U<:Updater}
 """
-function POMCPOWPlanner(actpolicy)
+function POMCPOWPlanner(pomdp, extra_params)
+
+    actpolicy = Symbol(extra_params[1])
+    tree_queries = parse(Int, extra_params[2])
 
     actpolicy_dict = Dict(
-        :UCB        => POMCPOWPlanner_UCB,
-        :MI         => POMCPOWPlanner_MI
+        :UCB        => POMCPOWPlanner_UCB(pomdp, tree_queries),
+        :MI         => POMCPOWPlanner_MI(pomdp, tree_queries)
     )
 
     act_pl = actpolicy_dict[actpolicy]
     return act_pl
 end
 
-function POMCPOWPlanner_UCB(pomdp; tree_queries = 2)          # TODO: Parametrize tree_queries.
+function POMCPOWPlanner_UCB(pomdp, tree_queries = 2)          # TODO: Parametrize tree_queries.
 
     rollout_policy = UCBRolloutPolicy(pomdp)
 
@@ -32,7 +35,7 @@ function POMCPOWPlanner_UCB(pomdp; tree_queries = 2)          # TODO: Parametriz
     return planner
 end
 
-function POMCPOWPlanner_MI(pomdp; tree_queries = 2)          # TODO: Parametrize tree_queries.
+function POMCPOWPlanner_MI(pomdp, tree_queries = 2)          # TODO: Parametrize tree_queries.
 
     rollout_policy = MIRolloutPolicy(pomdp)
 

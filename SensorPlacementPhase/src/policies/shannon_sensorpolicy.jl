@@ -20,7 +20,7 @@ mutable struct ShannonEntropyPolicy{RNG<:AbstractRNG, P<:Union{POMDP,MDP}, U<:Up
 end
 # The constructor below should be used to create the policy so that the action space is initialized correctly
 ShannonEntropyPolicy(problem::Union{POMDP,MDP}; rng=Random.GLOBAL_RNG, updater=POMDPPolicies.NothingUpdater()) = ShannonEntropyPolicy(rng, problem, updater)
-
+ShannonEntropyPolicy(problem::Union{POMDP,MDP}, extra_params::AbstractArray) = ShannonEntropyPolicy(problem)
 
 
 function greedyShannonPolicy(gpla_wf::GPLA, legal_actions::AbstractArray)

@@ -20,6 +20,7 @@ mutable struct MutualInfoPolicy{RNG<:AbstractRNG, P<:Union{POMDP,MDP}, U<:Update
 end
 # The constructor below should be used to create the policy so that the action space is initialized correctly
 MutualInfoPolicy(problem::Union{POMDP,MDP}; rng=Random.GLOBAL_RNG, updater=POMDPPolicies.NothingUpdater()) = MutualInfoPolicy(rng, problem, updater)
+MutualInfoPolicy(problem::Union{POMDP,MDP}, extra_params::AbstractArray) = MutualInfoPolicy(problem)
 
 
 

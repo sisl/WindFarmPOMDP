@@ -7,7 +7,9 @@
     ARGS[1]
         `solvermethod`      Solver method for sensor placements. Inherited automatically from solve_SensorPP.jl.
     Options
-        genetic             Uses genetic algorithm to place new sensors.
+        entropy             Uses Shannon Entropy (Papadopoulou et al.) to place new sensors.    [Uses `layoutfinder` only after calculating ground truth profit, not during placements.]
+        mutualinfo          Uses Mutual Information (Krause et al.) to place new sensors.       [Uses `layoutfinder` only after calculating ground truth profit, not during placements.]
+        diffentro           Uses Differential Entropy (Herbrich et al.) to place new sensors.   [Uses `layoutfinder` only after calculating ground truth profit, not during placements.]
 
     ARGS[2]
         `layoutfinder`      Layout type for heuristically determining a turbine layout.
@@ -17,31 +19,18 @@
         mcmc                Selects turbine locations with Metropolis-Hastings MCMC.            [Non-sequential]
 
     ARGS[3]
-        `no_of_iterations`  Number of times genetic algorithm is called.
-
-    ARGS[4]
-        `populationSize`    Size of the population during each call of the genetic algorithm.
-    
-    ARGS[5]
-        `crossoverRate`     Rate of crossover, between 0 and 1.
-    
-    ARGS[6]
-        `mutationRate`      Rate of mutation, between 0 and 1.
-
-    ARGS[7]
         `savename`          Save name for results. Any valid String accepted. Enter 0 to skip saving.
 
 
     Example Call:
-        `julia solve_SensorPP_genetic.jl genetic mcmc 3 50 0.8 0.05 foo.csv`
+        `julia solve_SensorPP_greedy.jl entropy greedy foo.csv`
 
 """
 
 # Parse ARGS
 localARGS = isdefined(Main, :genericARGS) ? genericARGS : ARGS
 @show solvermethod, layoutfinder = Symbol.(localARGS[1:2])
-@show extra_params = localARGS[3:end-1]
-@show savename = localARGS[end]
+@show savename = localARGS[3]
 
 include("../../SensorPlacementPhase/src/SensorPP.jl")
 include("../../TurbinePlacementPhase/src/TurbinePP.jl")
@@ -64,17 +53,37 @@ pomdp = WindFarmPOMDP(wfparams.nx, wfparams.ny, wfparams.grid_dist, wfparams.alt
 b0 = initialize_belief_lookup(wfparams)
 s0 = initialize_state(b0, wfparams)
 
-# Define Solver
-solver = extract_solver_method(pomdp, solvermethod, extra_params)
+# Construct Belief Updater
+up = WindFarmBeliefUpdater(wfparams.altitudes, wfparams.grid_dist)
 
-# Compute the optimal sensor placements
-soln = get_solution(s0, pomdp, tlparams, wfparams, solver)
+# Define Solver
+solver = extract_solver_method(pomdp, solvermethod)
+
+
+println("### Starting Stepthrough ###")
+global states_history = []
+global belief_history = []
+global actions_history = []
+global obs_history = []
+global rewards_history = []
+for (s, a, r, o, b, t, sp, bp) in stepthrough(pomdp, solver, up, b0, s0, "s,a,r,o,b,t,sp,bp", max_steps=no_of_sensors)
+    # @show s
+    @show a
+    @show o
+    @show r
+    @show t
+    push!(states_history,   sp)
+    push!(belief_history,   bp)
+    push!(actions_history,  a)
+    push!(obs_history,      o)
+    push!(rewards_history,  r)
+end
 
 # Show utility of solution
-@show RR = get_ground_truth_profit(s0, soln, tlparams, wfparams)
+@show RR = get_ground_truth_profit(states_history, tlparams, wfparams)
 end    # time_taken
 
 
 # Save results
 @show round(time_taken; digits=3)
-writedlm_append(savename, hcat(solvermethod, layoutfinder, vec(extra_params)..., round(time_taken; digits=2), RR))
+writedlm_append(savename, hcat(solvermethod, layoutfinder, round(time_taken; digits=2), RR))

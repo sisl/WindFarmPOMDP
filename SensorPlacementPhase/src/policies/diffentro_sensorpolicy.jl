@@ -20,6 +20,7 @@ mutable struct DiffEntroPolicy{RNG<:AbstractRNG, P<:Union{POMDP,MDP}, U<:Updater
 end
 # The constructor below should be used to create the policy so that the action space is initialized correctly
 DiffEntroPolicy(problem::Union{POMDP,MDP}; rng=Random.GLOBAL_RNG, updater=POMDPPolicies.NothingUpdater()) = DiffEntroPolicy(rng, problem, updater)
+DiffEntroPolicy(problem::Union{POMDP,MDP}, extra_params::AbstractArray) = DiffEntroPolicy(problem)
 
 
 function greedyDiffEntroPolicy(gpla_wf::GPLA, legal_actions::AbstractArray, pomdp::WindFarmPOMDP)

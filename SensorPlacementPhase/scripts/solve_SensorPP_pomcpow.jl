@@ -5,13 +5,8 @@
     User Arguments:
 
     ARGS[1]
-        `solvermethod`      Solver method for sensor placements.
+        `solvermethod`      Solver method for sensor placements. Inherited automatically from solve_SensorPP.jl.
     Options
-        entropy             Uses Shannon Entropy (Papadopoulou et al.) to place new sensors.    [Does not use turbine layout heuristic `layoutfinder`.]
-        mutualinfo          Uses Mutual Information (Krause et al.) to place new sensors.       [Does not use turbine layout heuristic `layoutfinder`.]
-        diffentro           Uses Differential Entropy (Herbrich et al.) to place new sensors.   [Does not use turbine layout heuristic `layoutfinder`.]
-        bayesian            TODO.
-        genetic             TODO.
         pomcpow             Uses the POMCPOW tree-search method (Sunberg et al.) to place new sensors.
 
     ARGS[2]
@@ -25,36 +20,31 @@
         `actpolicy`         The action branching & rollout policy to be used, if the `solvermethod` is pomcpow.
     Options
         UCB                 Uses upper bound of 90% confidence interval over wind speed belief as the policy.
-        MI                  Uses Mutual Information to as the policy.
+        MI                  Uses Mutual Information to as the policy.  Warning: Very slow!
+    
+    ARGS[4]
+        `tree_queries`      Number of tree queries.
+
+    ARGS[5]
+        `savename`          Save name for results. Any valid String accepted. Enter 0 to skip saving.
 
 
-    Example Calls:
-        `julia solve_SensorPP.jl entropy greedy`
-        `julia solve_SensorPP.jl pomcpow mcmc MI`
+    Example Call:
+        `julia solve_SensorPP_pomcpow.jl pomcpow genetic UCB 100 foo.csv`
 
 """
 
-if Threads.nthreads() == 1
-    @warn "You are not running Julia in multiple threads. Aborted.\nRun e.g. `export JULIA_NUM_THREADS=16` in Terminal before entering Julia environment."
-    exit()
-end
+# Parse ARGS
+localARGS = isdefined(Main, :genericARGS) ? genericARGS : ARGS
+@show solvermethod, layoutfinder = Symbol.(localARGS[1:2])
+@show extra_params = localARGS[3:end-1]
+@show savename = localARGS[end]
 
-# Parse user Arguments
-if isempty(ARGS)
-    solvermethod, layoutfinder = :pomcpow, :greedy
-else
-    solvermethod, layoutfinder = Symbol.(ARGS[1:2])
-end
-
-if length(ARGS) < 3
-    actpolicy = :UCB
-else
-    actpolicy = Symbol(ARGS[3])
-end
-
-# Load modules and scripts
 include("../../SensorPlacementPhase/src/SensorPP.jl")
 include("../../TurbinePlacementPhase/src/TurbinePP.jl")
+
+# Record time elapsed
+time_taken = @elapsed begin
 
 # Wind Field Belief Parameters
 wfparams = WindFieldBeliefParams(nx=20,ny=20)
@@ -75,7 +65,7 @@ s0 = initialize_state(b0, wfparams)
 up = WindFarmBeliefUpdater(wfparams.altitudes, wfparams.grid_dist)
 
 # Define Solver
-solver = extract_solver_method(pomdp, solvermethod, actpolicy)
+solver = extract_solver_method(pomdp, solvermethod, extra_params)
 
 
 println("### Starting Stepthrough ###")
@@ -97,16 +87,11 @@ for (s, a, r, o, b, t, sp, bp) in stepthrough(pomdp, solver, up, b0, s0, "s,a,r,
     push!(rewards_history,  r)
 end
 
-
+# Show utility of solution
 @show RR = get_ground_truth_profit(states_history, tlparams, wfparams)
+end    # time_taken
 
-# plot_WindFarmPOMDP_policy!(solvermethod, wfparams, actions_history, rewards_history, b0)
 
-# using D3Trees, ProfileView
-# @time _, info = action_info(planner, b0, tree_in_info=true)
-# @time _, info = action_info(planner, b0, tree_in_info=true)
-# @profview _, info = action_info(planner, b0, tree_in_info=true)
-
-# @code_warntype _, info = action_info(planner, b0, tree_in_info=true)
-# tree = info[:tree]
-# inbrowser(D3Tree(tree, init_expand=1), "firefox")
+# Save results
+@show round(time_taken; digits=3)
+writedlm_append(savename, hcat(solvermethod, layoutfinder, vec(extra_params)..., round(time_taken; digits=2), RR))

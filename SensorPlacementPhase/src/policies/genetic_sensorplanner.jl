@@ -4,16 +4,18 @@
 
 @with_kw struct GeneticPlanner
     no_of_iterations = 3
-    populationSize = 10     # TODO: Increase this. And parametrize.
+    populationSize = 50
     crossoverRate = 0.8
     mutationRate = 0.05
 end
 
 # Constructor
-GeneticPlanner(pomdp::Union{POMDP,MDP}) = GeneticPlanner()
+GeneticPlanner(pomdp::WindFarmPOMDP, extra_params::AbstractArray) = GeneticPlanner(parse.(Float64, extra_params)...)
 
 
-function get_solution(pomdp::WindFarmPOMDP, s0::WindFarmState, tlparams, wfparams, solver::GeneticPlanner, layouttype)
+function get_solution(s0::WindFarmState, pomdp::WindFarmPOMDP, tlparams, wfparams, solver::GeneticPlanner, layouttype)
+
+    println("### Starting Solver ###")
 
     init_locs_sensors() = rand(1:size(X_field, 2), no_of_sensors)
 
@@ -39,7 +41,7 @@ function get_solution(pomdp::WindFarmPOMDP, s0::WindFarmState, tlparams, wfparam
 
     opts = Evolutionary.Options(iterations = solver.no_of_iterations, abstol = 1e-5)
 
-    mthd = GA(populationSize = solver.populationSize,
+    mthd = GA(populationSize = Int(solver.populationSize),
               crossoverRate = solver.crossoverRate,
               mutationRate = solver.mutationRate,
               selection = Evolutionary.sus,
@@ -66,7 +68,7 @@ function get_layout_profit(s0, locs, X_field, tlparams, wfparams, solver::Geneti
 
     x_sensors_obs = CartIndices_to_Array(flatten(x_sensors_expanded))
     gpla_wf = get_GPLA_for_gen(s0.x_obs, s0.y_obs, wfparams)
-    @show obs_y = rand(gpla_wf, x_sensors_obs)
+    obs_y = rand(gpla_wf, x_sensors_obs)
 
     # Get next state
     sp_x_acts = x_sensors
@@ -78,4 +80,4 @@ function get_layout_profit(s0, locs, X_field, tlparams, wfparams, solver::Geneti
     return Int(round(result))    # Evolutionary.jl requires returning as Int.
 end
 
-get_solution(pomdp::WindFarmPOMDP, s0::WindFarmState, tlparams, wfparams, solver::GeneticPlanner) = get_solution(pomdp, s0, tlparams, wfparams, solver, tlparams.layouttype)
+get_solution(s0::WindFarmState, pomdp::WindFarmPOMDP, tlparams, wfparams, solver::GeneticPlanner) = get_solution(s0, pomdp, tlparams, wfparams, solver, tlparams.layouttype)
