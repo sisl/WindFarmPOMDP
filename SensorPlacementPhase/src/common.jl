@@ -3,7 +3,7 @@ function extract_solver_method(pomdp, solvermethod, extra_params)
         :entropy        => ShannonEntropyPolicy,
         :mutualinfo     => MutualInfoPolicy,
         :diffentro      => DiffEntroPolicy,
-        # :bayesian       => BayesianPlanner,        # TODO.
+        :bayesian       => BayesianPlanner,
         :genetic        => GeneticPlanner,
         :pomcpow        => POMCPOWPlanner
     )
@@ -18,7 +18,7 @@ function get_func_name(solvermethod)
         :entropy        => "./solve_SensorPP_greedy.jl",
         :mutualinfo     => "./solve_SensorPP_greedy.jl",
         :diffentro      => "./solve_SensorPP_greedy.jl",
-        # :bayesian       => "./solve_SensorPP_bayesian.jl",        # TODO.
+        :bayesian       => "./solve_SensorPP_bayesian.jl",
         :genetic        => "./solve_SensorPP_genetic.jl",
         :pomcpow        => "./solve_SensorPP_pomcpow.jl"
     )

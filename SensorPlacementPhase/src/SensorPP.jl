@@ -9,6 +9,7 @@ using Plots
 using ImageTransformations
 using NearestNeighbors
 using StatsBase
+using BayesianOptimization
 
 # WindGP repo
 include("../../../WindGP/src/WindGP.jl")

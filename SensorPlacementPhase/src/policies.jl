@@ -5,5 +5,5 @@ include("./policies/shannon_sensorpolicy.jl")
 include("./policies/pomcpow_expertpolicies.jl")
 include("./policies/pomcpow_sensorplanner.jl")
 
-# include("./policies/bayesian_sensorplanner.jl")
+include("./policies/bayesian_sensorplanner.jl")
 include("./policies/genetic_sensorplanner.jl")
