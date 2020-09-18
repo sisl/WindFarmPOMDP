@@ -8,7 +8,7 @@
 end
 
 # Constructor
-BayesianPlanner(pomdp::WindFarmPOMDP, extra_params::AbstractArray) = BayesianPlanner(parse.(Float64, extra_params)...)
+BayesianPlanner(pomdp::WindFarmPOMDP, extra_params::AbstractArray) = BayesianPlanner(parse.(Int, extra_params)...)
 
 
 function get_solution(s0::WindFarmState, pomdp::WindFarmPOMDP, tlparams, wfparams, solver::BayesianPlanner, layouttype)
@@ -26,7 +26,7 @@ function get_solution(s0::WindFarmState, pomdp::WindFarmPOMDP, tlparams, wfparam
                                          mean = MeanConst(0.5),
                                          kernel = Mat52Ard(zeros(no_of_sensors), 0.),
                                          logNoise = -2.,
-                                         capacity = 3000    # initial capacity of ElasticArray
+                                         capacity = 3000    # initial capacity of ElasticArray (pre-allocation)
     )
 
     modeloptimizer = BayesianOptimization.MAPGPOptimizer(every = solver.every_n_samples,

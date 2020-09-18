@@ -4,7 +4,7 @@
 
 @with_kw struct MCMCTurbineLayout <: TurbineLayoutType 
     no_of_trials = 10
-    no_of_iterations = 100
+    no_of_iterations = 75
 end
 
 function get_turbine_layout(gpla_wf::GPLA, tlparams::TurbineLayoutParams, wfparams::WindFieldBeliefParams, layouttype::MCMCTurbineLayout)

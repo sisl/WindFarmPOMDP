@@ -10,10 +10,11 @@ function mcmc(init_state, obj_func, no_of_iterations, X_field, tlparams; tune_fa
         next_state, next_state_prob = sample_layout(state_dist, state_dist_vals, X_field, tlparams)
         prev_state_prob = recover_prev_state_prob(prev_state, next_state, X_field)
 
-        J_prev = obj_func(prev_state)^tune_factor
-        J_next = obj_func(next_state)^tune_factor
+        J_prev = obj_func(prev_state)
+        J_next = obj_func(next_state)
+        J_ratio = (J_next / J_prev)^tune_factor
 
-        ρ = min(1, (prev_state_prob / next_state_prob * J_next / J_prev))
+        ρ = min(1, (prev_state_prob / next_state_prob * J_ratio))
         
         obj_func(best_state) ≤ obj_func(next_state) ? best_state = copy(next_state) : nothing
         rand() ≤ ρ ? prev_state = next_state : nothing
@@ -23,20 +24,23 @@ function mcmc(init_state, obj_func, no_of_iterations, X_field, tlparams; tune_fa
     return best_state
 end
 
-function fit_distribution(x_turbines, X_field; num_of_neighbors = 15, ℓ = 220 * 5)
+function fit_distribution(x_turbines, X_field; num_of_neighbors = 15)
     kdtree = NearestNeighbors.KDTree(X_field)
     knn_results = knn.(Ref(kdtree), eachcol(x_turbines), Ref(num_of_neighbors))
 
     state_dist_vals = nn = getindex.(knn_results, Ref(1))
 
-    pdfs = [exp.((item[2]./ℓ).^2) for item in knn_results]
+    # pdfs = [exp.((item[2]./ℓ).^2) for item in knn_results]
+    pdfs = get_pdfs.(knn_results)
     pdfs_nrmz = prob_normalize.(pdfs)
 
     state_dist = Distributions.Categorical.(pdfs_nrmz)
     return state_dist, state_dist_vals
 end
 
-function sample_layout(state_dist, state_dist_vals, X_field, tlparams; n_tries = 100)
+get_pdfs(knn_results_single_col; ℓ = 220 * 5) = exp.((knn_results_single_col[2]./ℓ).^2)
+
+function sample_layout(state_dist, state_dist_vals, X_field, tlparams; n_tries = 50)
     spl = reshape(Float64[], 3, 0)
     spl_prob = 0.0
 
@@ -54,7 +58,7 @@ function sample_layout(state_dist, state_dist_vals, X_field, tlparams; n_tries =
     return spl, spl_prob
 end
 
-function recover_prev_state_prob(prev_state, next_state, X_field; num_of_neighbors = 15, ℓ = 220 * 5)
+function recover_prev_state_prob(prev_state, next_state, X_field; num_of_neighbors = 15)
     kdtree = NearestNeighbors.KDTree(X_field)
     knn_results = knn.(Ref(kdtree), eachcol(next_state), Ref(num_of_neighbors))
     nn = getindex.(knn_results, Ref(1))
@@ -62,7 +66,8 @@ function recover_prev_state_prob(prev_state, next_state, X_field; num_of_neighbo
     prev_state_idxs = knn.(Ref(kdtree), eachcol(prev_state), Ref(1))
     prev_state_idxs = getindex.(getindex.(prev_state_idxs, Ref(1)), Ref(1))
 
-    pdfs = [exp.((item[2]./ℓ).^2) for item in knn_results]
+    # pdfs = [exp.((item[2]./ℓ).^2) for item in knn_results]
+    pdfs = get_pdfs.(knn_results)
     pdfs = sum.(pdfs)
 
     return prod(inv.(pdfs))

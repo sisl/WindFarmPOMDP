@@ -26,7 +26,6 @@ savename = string("./$dir/", script_name, '_', dt, ".csv")
 genericARGS = vcat(ARGS[3:end]..., savename)
 
 
-global REWARD_RECORDS = []
 for c in 1:no_of_runs
     @show c
     include(script_name)

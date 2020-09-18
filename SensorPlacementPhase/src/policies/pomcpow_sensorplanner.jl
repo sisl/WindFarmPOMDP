@@ -3,8 +3,8 @@
 """
 function POMCPOWPlanner(pomdp, extra_params)
 
-    actpolicy = Symbol(extra_params[1])
-    tree_queries = parse(Int, extra_params[2])
+    actpolicy = Symbol(isempty(extra_params) ? "UCB" : extra_params[1])
+    tree_queries = parse(Int, isempty(extra_params) ? "100" : extra_params[2])
 
     actpolicy_dict = Dict(
         :UCB        => POMCPOWPlanner_UCB(pomdp, tree_queries),
@@ -15,7 +15,7 @@ function POMCPOWPlanner(pomdp, extra_params)
     return act_pl
 end
 
-function POMCPOWPlanner_UCB(pomdp, tree_queries = 2)          # TODO: Parametrize tree_queries.
+function POMCPOWPlanner_UCB(pomdp, tree_queries)
 
     rollout_policy = UCBRolloutPolicy(pomdp)
 
@@ -35,7 +35,7 @@ function POMCPOWPlanner_UCB(pomdp, tree_queries = 2)          # TODO: Parametriz
     return planner
 end
 
-function POMCPOWPlanner_MI(pomdp, tree_queries = 2)          # TODO: Parametrize tree_queries.
+function POMCPOWPlanner_MI(pomdp, tree_queries)
 
     rollout_policy = MIRolloutPolicy(pomdp)
 

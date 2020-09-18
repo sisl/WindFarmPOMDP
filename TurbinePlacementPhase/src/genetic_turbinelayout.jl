@@ -4,7 +4,7 @@
 
 @with_kw struct GeneticTurbineLayout <: TurbineLayoutType
     no_of_iterations = 10
-    populationSize = 100
+    populationSize = 75
     crossoverRate = 0.8
     mutationRate = 0.05
 end

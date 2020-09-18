@@ -29,8 +29,9 @@
 
 # Parse ARGS
 localARGS = isdefined(Main, :genericARGS) ? genericARGS : ARGS
-@show solvermethod, layoutfinder = Symbol.(localARGS[1:2])
-@show savename = localARGS[3]
+solvermethod, layoutfinder = Symbol.(localARGS[1:2])
+savename = localARGS[3]
+@show solvermethod, savename
 
 include("../../SensorPlacementPhase/src/SensorPP.jl")
 include("../../TurbinePlacementPhase/src/TurbinePP.jl")
