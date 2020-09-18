@@ -39,7 +39,7 @@ function get_solution(s0::WindFarmState, pomdp::WindFarmPOMDP, tlparams, wfparam
     cb = Evolutionary.ConstraintBounds(lx,ux,lc,uc)
     constraints = MixedTypePenaltyConstraints(PenaltyConstraints([1e3], cb, cons_sensors), tc)
 
-    opts = Evolutionary.Options(iterations = solver.no_of_iterations, abstol = 1e-5)
+    opts = Evolutionary.Options(iterations = Int(solver.no_of_iterations), abstol = 1e-5)
 
     mthd = GA(populationSize = Int(solver.populationSize),
               crossoverRate = solver.crossoverRate,
@@ -78,6 +78,7 @@ function get_layout_profit(s0, locs, X_field, tlparams, wfparams, solver::Geneti
     GaussianProcesses.fit!(gpla_wf, sp_x_obs, sp_y_obs)
 
     result = get_layout_profit(sp, gpla_wf, tlparams, wfparams, layouttype)
+    @show locs, result
     return Int(round(result))    # Evolutionary.jl requires returning as Int in this configuration.
 end
 

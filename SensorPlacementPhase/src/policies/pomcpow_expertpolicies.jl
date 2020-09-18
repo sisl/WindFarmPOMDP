@@ -141,6 +141,10 @@ end
 POMDPs.updater(policy::UCBRolloutPolicy) = policy.updater
 POMDPPolicies.action(policy::UCBRolloutPolicy, b::WindFarmBelief) = UCBWideningPolicy(policy.problem, b::WindFarmBelief, EmptyBeliefNode())
 
+function UCBWideningPolicy(pomdp::WindFarmPOMDP, sf::POMCPOW.StateBelief, nd::POWTreeObsNode)
+    legal_actions = actions(pomdp, sf.sr_belief.dist.items[end][1])
+    return rand(legal_actions)
+end 
 
 """
     MIRolloutPolicy{RNG<:AbstractRNG, P<:Union{POMDP,MDP}, U<:Updater}
