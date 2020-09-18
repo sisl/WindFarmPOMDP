@@ -70,9 +70,10 @@ function POMDPs.gen(m::WindFarmPOMDP, s::WindFarmState, a0::CartesianIndex{3}, r
     
     # Get reward
     GaussianProcesses.fit!(gpla_wf, sp_x_obs, sp_y_obs)
-    r = get_layout_profit(sp, gpla_wf, tlparams, wfparams)
+    r = get_layout_profit(sp, gpla_wf, tlparams, wfparams)    /1.0e7/10    # TODO: Change `10` to be number of turbines. Include it in WindFarmPOMDP.
 
-    return (sp = sp, o = o, r = r/1.0e7/10)    # TODO: Change `10` to be number of turbines. Include it in WindFarmPOMDP.
+    if r > 1 @warn "Reward surpasses 1.0. Increase normalizing value" end
+    return (sp = sp, o = o, r = r)
 end
 
 # P(o|s,a,s')

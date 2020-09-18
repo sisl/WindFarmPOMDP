@@ -75,9 +75,10 @@ function get_layout_profit(s0, locs, X_field, tlparams, wfparams, solver::Geneti
     sp_x_obs  = x_sensors_obs
     sp_y_obs  = obs_y
     sp = WindFarmState(sp_x_acts, sp_x_obs, sp_y_obs, s0.x_obs_full, s0.y_obs_full)
+    GaussianProcesses.fit!(gpla_wf, sp_x_obs, sp_y_obs)
 
     result = get_layout_profit(sp, gpla_wf, tlparams, wfparams, layouttype)
-    return Int(round(result))    # Evolutionary.jl requires returning as Int.
+    return Int(round(result))    # Evolutionary.jl requires returning as Int in this configuration.
 end
 
 get_solution(s0::WindFarmState, pomdp::WindFarmPOMDP, tlparams, wfparams, solver::GeneticPlanner) = get_solution(s0, pomdp, tlparams, wfparams, solver, tlparams.layouttype)
