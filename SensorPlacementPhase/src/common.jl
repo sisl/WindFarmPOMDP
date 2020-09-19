@@ -1,3 +1,7 @@
+"""
+    Common functions used in the Sensor Placement Phase.
+"""
+
 function extract_solver_method(pomdp, solvermethod, extra_params)
     policy_dict = Dict(
         :entropy        => ShannonEntropyPolicy,
