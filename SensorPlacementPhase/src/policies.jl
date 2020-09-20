@@ -7,3 +7,4 @@ include("./policies/pomcpow_sensorplanner.jl")
 
 include("./policies/bayesian_sensorplanner.jl")
 include("./policies/genetic_sensorplanner.jl")
+include("./policies/random_sensorplanner.jl")

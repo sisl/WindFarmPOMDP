@@ -4,6 +4,7 @@ function show_results_as_dataframe(csv_filenames; normalizer_rewards = 1.0e6)
     pr = []
     tt = []
     td = []
+    solvername = ""
 
     for fl in csv_filenames
         file_path = csv_dir * fl
@@ -38,6 +39,7 @@ function show_results_as_dataframe(csv_filenames; normalizer_rewards = 1.0e6)
     tt = tt[srt]
     td = td[srt]
 
+    @show solvername
     @show Data_results = DataFrame(Params = pr,
                     Reward = μs,
                     Reward_pm = σs, 
@@ -51,4 +53,13 @@ end
 function get_csv_filenames(files_in_dir, val)
     idx = findall(x -> occursin(val, x), files_in_dir)
     return files_in_dir[idx]
+end
+
+function parse_results(solvermethods, csv_dir)
+    rd = readdir(csv_dir)
+
+    for sv in solvermethods
+        csv_filenames_sv  = get_csv_filenames(rd, String(sv))
+        show_results_as_dataframe(csv_filenames_sv)
+    end
 end
