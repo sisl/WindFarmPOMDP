@@ -47,7 +47,15 @@ end
 
     # GPLA
     num_neighbors = 5
-    theta = [-1.5802417326559162, 4.0, 7.147412061026513, 0.7893190206886835, 0.3038066734614207, 1.0, 0.0, 1.3127192001252717e-209]
+    theta = [-1.5,            # measurement noise, σy
+             4.0,             # mean, only used when kernel.mean is MeanConst.
+             7.0,             # ℓ2_sq
+             -0.5,            # σ2_sq
+             4.0,             # ℓ_lin
+             -0.5,            # σ2_lin
+             0.0,             # d
+             0.05             # zₒ
+    ]
 
 end
 
