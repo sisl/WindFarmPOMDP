@@ -21,7 +21,7 @@
 
 
     Example Call:
-        `julia solve_SensorPP_random.jl random mcmc 3 50 0.8 0.05 foo.csv`
+        `julia solve_SensorPP_random.jl random mcmc foo.csv`
 
 """
 

@@ -18,7 +18,7 @@ include("../../TurbinePlacementPhase/src/TurbinePP.jl")
 no_of_runs = parse(Int, ARGS[1])
 script_name = ARGS[2]
 
-dir = string("Generic_Run_Results")
+dir = string("Generic_Run_Results_reducedvar10")
 !isdir(dir) ? mkdir(dir) : nothing
 dt = Dates.now()
 savename = string("./$dir/", script_name, '_', dt, ".csv")

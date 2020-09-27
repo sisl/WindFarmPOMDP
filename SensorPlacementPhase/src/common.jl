@@ -7,6 +7,7 @@ function extract_solver_method(pomdp, solvermethod, extra_params)
         :entropy        => ShannonEntropyPolicy,
         :mutualinfo     => MutualInfoPolicy,
         :diffentro      => DiffEntroPolicy,
+        :greedy         => UCBGreedyPolicy,
         :random         => RandomPlanner,
         :bayesian       => BayesianPlanner,
         :genetic        => GeneticPlanner,

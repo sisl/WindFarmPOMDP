@@ -39,14 +39,15 @@ function show_results_as_dataframe(csv_filenames; normalizer_rewards = 1.0e6)
     tt = tt[srt]
     td = td[srt]
 
-    @show solvername
-    @show Data_results = DataFrame(Params = pr,
-                    Reward = μs,
-                    Reward_pm = σs, 
-                    Time = tt,
-                    Time_pm = td                          
+    Data_results = DataFrame(Params = pr,
+    Reward = μs,
+    Reward_pm = σs, 
+    Time = tt,
+    Time_pm = td                          
     );
-
+    
+    @show solvername
+    @show Data_results
     println("\n")
 end
 

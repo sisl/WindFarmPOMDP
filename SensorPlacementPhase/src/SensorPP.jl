@@ -10,6 +10,7 @@ using ImageTransformations
 using NearestNeighbors
 using StatsBase
 using BayesianOptimization
+using Memoize
 
 # WindGP repo
 include("../../../WindGP/src/WindGP.jl")

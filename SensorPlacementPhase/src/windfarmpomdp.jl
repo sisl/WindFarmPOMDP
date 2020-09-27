@@ -10,7 +10,7 @@ end
 POMDPs.discount(::WindFarmPOMDP) = 0.9
 POMDPs.isterminal(p::WindFarmPOMDP, s::WindFarmState) = size(s.x_acts, 2) > p.timesteps
 
-function get_GPLA_for_gen(X, Y, wfparams::WindFieldBeliefParams)
+@memoize function get_GPLA_for_gen(X, Y, wfparams::WindFieldBeliefParams)
 
     if typeof(b0.gpla_wf.mean) == GaussianProcesses.MeanConst
         gp_mean = MeanConst(wfparams.theta[2])
@@ -70,7 +70,7 @@ function POMDPs.gen(m::WindFarmPOMDP, s::WindFarmState, a0::CartesianIndex{3}, r
     
     # Get reward
     GaussianProcesses.fit!(gpla_wf, sp_x_obs, sp_y_obs)
-    r = get_layout_profit(sp, gpla_wf, tlparams, wfparams)    /1.5e7/10    # TODO: Change `10` to be number of turbines. Include it in WindFarmPOMDP.
+    r = get_layout_profit(sp, gpla_wf, tlparams, wfparams)    /2.3e7/10    # TODO: Change `10` to be number of turbines. Include it in WindFarmPOMDP.
 
     if r > 1 @warn "Reward surpasses 1.0, and is $r. Increase normalizing value." end
     return (sp = sp, o = o, r = r)
@@ -92,7 +92,7 @@ end
 ## Possible Action Spaces ##
 ############################
 
-function POMDPs.actions(p::WindFarmPOMDP)
+@memoize function POMDPs.actions(p::WindFarmPOMDP)
     """ All possible actions, regardless of history. """
     altitudes = p.altitudes
     grid_dist = p.grid_dist
@@ -104,7 +104,7 @@ function POMDPs.actions(p::WindFarmPOMDP)
     return vec(collect(all_actions))
 end
 
-function POMDPs.actions(p::WindFarmPOMDP, s::WindFarmState)
+@memoize function POMDPs.actions(p::WindFarmPOMDP, s::WindFarmState)
     """ Permitted actions, after having taken previous hallucination actions in the tree. """
 
     all_actions_Set = Set(POMDPs.actions(p))
@@ -116,7 +116,7 @@ function POMDPs.actions(p::WindFarmPOMDP, s::WindFarmState)
     return collect(all_actions_Set)
 end
 
-function POMDPs.actions(p::WindFarmPOMDP, b::WindFarmBelief)
+@memoize function POMDPs.actions(p::WindFarmPOMDP, b::WindFarmBelief)
     """ Permitted actions, after having taken an actual action, thereby updating the belief. """
 
     all_actions_Set = Set(POMDPs.actions(p))

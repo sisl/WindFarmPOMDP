@@ -1,10 +1,10 @@
 """
-    UCBExpertPolicy{RNG<:AbstractRNG, P<:Union{POMDP,MDP}, U<:Updater}
+    UCBGreedyPolicy{RNG<:AbstractRNG, P<:Union{POMDP,MDP}, U<:Updater}
 an expert policy that is used to select the greediest actions with respect to some Upper Confidence Bounds.
 
 Constructor:
 
-    `UCBExpertPolicy(problem::Union{POMDP,MDP};
+    `UCBGreedyPolicy(problem::Union{POMDP,MDP};
              rng=Random.GLOBAL_RNG,
              updater=POMDPPolicies.NothingUpdater())`
 
@@ -14,14 +14,14 @@ Constructor:
 - `updater::U` a belief updater (default to `POMDPPolicies.NothingUpdater` in the above constructor)
 """
 
-mutable struct UCBExpertPolicy{RNG<:AbstractRNG, P<:Union{POMDP,MDP}, U<:Updater} <: Policy
+mutable struct UCBGreedyPolicy{RNG<:AbstractRNG, P<:Union{POMDP,MDP}, U<:Updater} <: Policy
     rng::RNG
     problem::P
     updater::U # set this to use a custom updater, by default it will be a void updater
 end
 # The constructor below should be used to create the policy so that the action space is initialized correctly
-UCBExpertPolicy(problem::Union{POMDP,MDP}; rng=Random.GLOBAL_RNG, updater=POMDPPolicies.NothingUpdater()) = UCBExpertPolicy(rng, problem, updater)
-
+UCBGreedyPolicy(problem::POMDP; rng=Random.GLOBAL_RNG, updater=POMDPPolicies.NothingUpdater()) = UCBGreedyPolicy(rng, problem, updater)
+UCBGreedyPolicy(pomdp::POMDP, extra_params) = UCBGreedyPolicy(pomdp)
 
 function greedyUCBExpert(gpla_wf::GPLA, legal_actions::AbstractArray)
     legal_actions = CartIndices_to_Array(legal_actions)
@@ -38,7 +38,7 @@ function greedyUCBExpert(gpla_wf::GPLA, legal_actions::AbstractArray)
     return best_action
 end
 
-function POMDPPolicies.action(policy::UCBExpertPolicy, b::WindFarmBelief)
+function POMDPPolicies.action(policy::UCBGreedyPolicy, b::WindFarmBelief)
     gpla_wf = b.gpla_wf
     legal_actions = actions(policy.problem, b)
     policy_action = greedyUCBExpert(gpla_wf, legal_actions)                      # deterministically choose the best location.
@@ -104,7 +104,7 @@ end
 UCBRolloutPolicy(problem::Union{POMDP,MDP}; rng=Random.GLOBAL_RNG, updater=MCTSRolloutUpdater(problem.altitudes, problem.grid_dist)) = UCBRolloutPolicy(rng, problem, updater)
 
 
-function get_UCB_rollout_actions(gpla_wf_rollout::GPLA, legal_actions::AbstractArray; top_n_to_consider::Int = 15)
+@memoize function get_UCB_rollout_actions(gpla_wf_rollout::GPLA, legal_actions::AbstractArray; top_n_to_consider::Int = 10)
 
     legal_actions = CartIndices_to_Array(legal_actions)
 
@@ -136,6 +136,7 @@ function UCBWideningPolicy(pomdp::WindFarmPOMDP, b::WindFarmBelief, h::BeliefNod
     best_actions, weights = get_UCB_rollout_actions(gpla_wf_rollout, legal_actions)
     policy_action = StatsBase.sample(collect(eachcol(best_actions)), Weights(weights))        # sample one candidate action w.r.t weights.
     return Vector_to_CartIndices(policy_action)
+    # return Vector_to_CartIndices(best_actions[:,1])    # debug
 end
 
 POMDPs.updater(policy::UCBRolloutPolicy) = policy.updater

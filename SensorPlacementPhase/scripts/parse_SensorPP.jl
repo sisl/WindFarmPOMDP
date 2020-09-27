@@ -3,12 +3,16 @@ using DataFrames
 using Statistics
 include("../src/utils/parse_functions.jl")
 
-csv_dir = "./Generic_Run_Results/"
+csv_dir = isempty(Main.ARGS) ? "./Generic_Run_Results/" : ARGS[1]
+
 solvermethods = [:pomcpow,
                  :genetic,
                  :bayesian,
+                 :random,
                  :greedy,
-                 :random
+                 :entropy,
+                 :mutualinfo,
+                 :diffentro
 ]
 
 parse_results(solvermethods, csv_dir)

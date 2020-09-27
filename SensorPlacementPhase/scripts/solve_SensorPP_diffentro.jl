@@ -7,7 +7,7 @@
     ARGS[1]
         `solvermethod`      Solver method for sensor placements. Inherited automatically from solve_SensorPP.jl.
     Options
-        greedy              Greedily pick the locations that the belief has the highest wind speed at.   [Uses `layoutfinder` only after calculating ground truth profit, not during placements.]
+        diffentro           Uses Differential Entropy (Herbrich et al.) to place new sensors.   [Uses `layoutfinder` only after calculating ground truth profit, not during placements.]
 
     ARGS[2]
         `layoutfinder`      Layout type for heuristically determining a turbine layout.
@@ -21,7 +21,7 @@
 
 
     Example Call:
-        `julia solve_SensorPP_greedy.jl greedy greedy foo.csv`
+        `julia solve_SensorPP_diffentro.jl diffentro greedy foo.csv`
 
 """
 

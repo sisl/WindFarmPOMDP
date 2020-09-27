@@ -169,16 +169,24 @@ end
 
 function get_random_init_solution(X_field, no_of_turbines, tlparams)
 """ Returns a random initial valid turbine placement layout. """ 
-    x_turbines_init = reshape(Float64[], 3, 0)
-    is_separated = true
-    locs = zeros(no_of_turbines)
+    kdtree = NearestNeighbors.KDTree(X_field)
+    x_turbines = reshape(Float64[], 3, 0)
 
-    while is_separated
-        locs = rand(1:size(X_field, 2), no_of_turbines)
-        x_turbines_init = X_field[:, locs]
-        is_separated = is_solution_separated(x_turbines_init, tlparams)
+    while no_of_turbines > 0
+        X_field = remove_seperated_locations(X_field, x_turbines, tlparams)
+
+        next_loc = rand(1:size(X_field, 2))
+        next_turbine = X_field[:, next_loc]
+
+        x_turbines = hcat(x_turbines, next_turbine)
+        no_of_turbines = no_of_turbines - 1
     end
-    return x_turbines_init, locs
+
+    knn_results = knn.(Ref(kdtree), eachcol(x_turbines), Ref(1))
+    nn = getindex.(knn_results, Ref(1))
+    locs = vcat(nn...)
+
+    return x_turbines, locs
 end
 
 function get_average_turbine_distances(x_turbines)

@@ -4,7 +4,7 @@
 
 @with_kw struct BayesianPlanner
     no_of_iterations = 300
-    every_n_samples = 20
+    every_n_samples = 20     # lower is more better, but more expensive.
 end
 
 # Constructor
@@ -47,10 +47,10 @@ function get_solution(s0::WindFarmState, pomdp::WindFarmPOMDP, tlparams, wfparam
                                     maxiterations = solver.no_of_iterations,    # max no of iterations
                                     sense = BayesianOptimization.Max,           # purpose [`Min`: minimizer, `Max`: maximizer]
                                     verbosity = BayesianOptimization.Silent,    # verbose intensity
-)
+    )
 
     result = BayesianOptimization.boptimize!(opt)
-    best_locs = result.model_optimizer
+    best_locs = result.observed_optimizer
     x_sensors = X_field[:, Int.(round.(best_locs))]
     
     return x_sensors
@@ -58,7 +58,6 @@ end
 
 function get_layout_profit(s0, locs, X_field, tlparams, wfparams, solver::BayesianPlanner, layouttype)
     locs = Int.(round.(locs))
-    
     x_sensors = X_field[:, locs]
     x_sensors_expanded = expand_action_to_below_altitudes.(Array_to_CartIndices(x_sensors), Ref(wfparams.altitudes))
 
@@ -74,7 +73,7 @@ function get_layout_profit(s0, locs, X_field, tlparams, wfparams, solver::Bayesi
     GaussianProcesses.fit!(gpla_wf, sp_x_obs, sp_y_obs)
 
     result = get_layout_profit(sp, gpla_wf, tlparams, wfparams, layouttype) / 1.0e7 / tlparams.no_of_turbines  # TODO.
-    @show result, locs
+    @show locs, result
     return result
 end
 

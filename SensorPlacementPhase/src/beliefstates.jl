@@ -41,21 +41,35 @@ end
     altitudes = [100, 150, 200]
     nx = 90
     ny = nx
+    scale_factor = 9
 
     # Observation Set
     grid_dist_obs = grid_dist .* 10
 
     # GPLA
     num_neighbors = 5
-    theta = [-1.5,            # measurement noise, σy
-             4.0,             # mean, only used when kernel.mean is MeanConst.
-             7.0,             # ℓ2_sq
-             -0.5,            # σ2_sq
-             4.0,             # ℓ_lin
-             -0.5,            # σ2_lin
-             0.0,             # d
-             0.05             # zₒ
-    ]
+    # theta = [-1.5,            # measurement noise, σy
+    #          4.0,             # mean, only used when kernel.mean is MeanConst.
+    #          7.0,             # ℓ2_sq
+    #          0.1,            # σ2_sq
+    #          0.3,             # ℓ_lin
+    #          0.5,            # σ2_lin
+    #          0.0,             # d
+    #          0.05             # zₒ
+    # ]
+
+    # theta = [-1.5802417326559162, 4.0, 7.147412061026513, 0.7893190206886835, 0.3038066734614207, 1.0, 0.0, 1.3127192001252717e-209]
+
+    theta = [-1.5,
+             4.0,
+             7.0,
+             0.7,
+             0.3,
+             1.0,
+             0.0, 
+             0.05
+    ] # this
+
 
 end
 
@@ -125,12 +139,13 @@ function initialize_belief_no_prior(wfparams::WindFieldBeliefParams)
     return WindFarmBelief(x_acts, gpla_wf)
 end
 
-function initialize_belief_lookup(wfparams::WindFieldBeliefParams; SCALE_FACTOR=4::Int)
+function initialize_belief_lookup(wfparams::WindFieldBeliefParams)
     """ This version has no observation points in the Gaussian prior, but instead, we the mean function of the GP is 
         a lookup table of the downsampled version of the GWA data of the specified altitudes.
     """
     nx, ny = wfparams.nx, wfparams.ny
     grid_dist = wfparams.grid_dist
+    scale_factor = wfparams.scale_factor
 
     # Load prior points for belief GP
     X_obs = reshape(Float64[],3,0)
@@ -140,7 +155,7 @@ function initialize_belief_lookup(wfparams::WindFieldBeliefParams; SCALE_FACTOR=
     Map = get_3D_data(wfparams.farm; altitudes = wfparams.altitudes)
     
     # Downsample farm data
-    IMG_SIZE = (div(nx, isqrt(SCALE_FACTOR)), div(ny, isqrt(SCALE_FACTOR)))
+    IMG_SIZE = (div(nx, isqrt(scale_factor)), div(ny, isqrt(scale_factor)))
     
     Y_mean = Float64[]
     X_mean = reshape(Float64[],3,0)
