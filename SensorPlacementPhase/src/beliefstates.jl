@@ -41,35 +41,23 @@ end
     altitudes = [100, 150, 200]
     nx = 90
     ny = nx
-    scale_factor = 9
+    scale_factor = 20
 
     # Observation Set
     grid_dist_obs = grid_dist .* 10
 
     # GPLA
     num_neighbors = 5
-    # theta = [-1.5,            # measurement noise, σy
-    #          4.0,             # mean, only used when kernel.mean is MeanConst.
-    #          7.0,             # ℓ2_sq
-    #          0.1,            # σ2_sq
-    #          0.3,             # ℓ_lin
-    #          0.5,            # σ2_lin
-    #          0.0,             # d
-    #          0.05             # zₒ
-    # ]
 
-    # theta = [-1.5802417326559162, 4.0, 7.147412061026513, 0.7893190206886835, 0.3038066734614207, 1.0, 0.0, 1.3127192001252717e-209]
-
-    theta = [-1.5,
-             4.0,
-             7.0,
-             0.7,
-             0.3,
-             1.0,
-             0.0, 
-             0.05
-    ] # this
-
+    theta = [-1.5,                          # measurement noise, σy
+             4.0,                           # mean, only used when kernel.mean is MeanConst.
+             6.152381297661223,             # ℓ2_sq
+             -0.06877700348630293,          # σ2_sq
+             6.106476739802775,             # ℓ_lin
+             -0.06871639714265196,          # σ2_lin
+             0.0,                           # d
+             0.05                           # zₒ
+    ]
 
 end
 

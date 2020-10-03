@@ -25,7 +25,7 @@ MutualInfoPolicy(problem::Union{POMDP,MDP}, extra_params::AbstractArray) = Mutua
 
 
 function greedyMutualInfoPolicy(gpla_wf::GPLA, legal_actions::AbstractArray, pomdp::WindFarmPOMDP)
-    legal_actions = CartIndices_to_Array(legal_actions)
+    legal_actions = CartIndices_to_Array([item for item in legal_actions if item[3]==pomdp.altitudes[end]])
 
     # Part 1.
     conditional_entropy_of_actions = conditional_entropy_of_action1.(Ref(gpla_wf), eachcol(legal_actions))
