@@ -33,9 +33,13 @@ function greedyUCBExpert(gpla_wf::GPLA, legal_actions::AbstractArray)
     z_value = 1.645   # chosen: 90 percent confidence interval
     UCB = μ + z_value / sqrt(N) * σ
     
-    best_val = argmax(vec(UCB))
-    best_action = legal_actions[:,best_val]
-    return best_action
+    # best_val = argmax(vec(UCB))
+    # best_action = legal_actions[:,best_val]
+
+    best_vals = argmaxall(vec(UCB); threshold = 1e-6)
+    best_action = legal_actions[:,rand(best_vals)]
+
+    return @show best_action
 end
 
 function POMDPPolicies.action(policy::UCBGreedyPolicy, b::WindFarmBelief)
@@ -104,7 +108,7 @@ end
 UCBRolloutPolicy(problem::Union{POMDP,MDP}; rng=Random.GLOBAL_RNG, updater=MCTSRolloutUpdater(problem.altitudes, problem.grid_dist)) = UCBRolloutPolicy(rng, problem, updater)
 
 
-@memoize function get_UCB_rollout_actions(gpla_wf_rollout::GPLA, legal_actions::AbstractArray; top_n_to_consider::Int = 10)
+@memoize function get_UCB_rollout_actions(gpla_wf_rollout::GPLA, legal_actions::AbstractArray; top_n_to_consider::Int = 15)
 
     legal_actions = CartIndices_to_Array(legal_actions)
 
