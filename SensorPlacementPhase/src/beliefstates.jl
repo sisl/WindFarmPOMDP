@@ -39,8 +39,8 @@ end
     farm = "AltamontCA"
     grid_dist = 220
     altitudes = [100, 150, 200]
-    nx = 90
-    ny = nx
+    nx = 20
+    ny = 20
     scale_factor = 20
 
     # Observation Set

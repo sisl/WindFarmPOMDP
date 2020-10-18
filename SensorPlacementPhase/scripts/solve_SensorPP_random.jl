@@ -40,7 +40,7 @@ include("../../TurbinePlacementPhase/src/TurbinePP.jl")
 time_taken = @elapsed begin
 
 # Wind Field Belief Parameters
-wfparams = WindFieldBeliefParams(nx=20,ny=20)
+wfparams = WindFieldBeliefParams()
 
 # Turbine Layout Heuristic Parameters
 tlparams = TurbineLayoutParams(layoutfinder)
