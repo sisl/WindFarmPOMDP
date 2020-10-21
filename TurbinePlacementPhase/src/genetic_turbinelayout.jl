@@ -3,8 +3,8 @@
 """
 
 @with_kw struct GeneticTurbineLayout <: TurbineLayoutType
-    no_of_iterations = 10
-    populationSize = 75
+    no_of_iterations = 600
+    populationSize = 6000
     crossoverRate = 0.8
     mutationRate = 0.05
 end
@@ -12,9 +12,19 @@ end
 
 function get_turbine_layout(gpla_wf::GPLA, tlparams::TurbineLayoutParams, wfparams::WindFieldBeliefParams, layouttype::GeneticTurbineLayout)
     
+    greedy_layout, _ = get_turbine_layout(gpla_wf, tlparams, wfparams, GreedyTurbineLayout())
+    no_of_turbines = tlparams.no_of_turbines
+    X_field = CartIndices_to_Array(turbine_action_space(tlparams, wfparams))
+    size_X_field = size(X_field, 2)
+    
     function init_locs()
-        _, loc = get_random_init_solution(X_field, no_of_turbines, tlparams)
-        return loc
+        # _, loc = get_random_init_solution(X_field, no_of_turbines, tlparams)
+
+        kdtree = NearestNeighbors.KDTree(X_field)
+        knn_results = knn.(Ref(kdtree), eachcol(greedy_layout), Ref(10))
+        nn = getindex.(knn_results, Ref(1))
+
+        return rand.(nn)
     end
 
     function cons(locs, X_field)
@@ -26,9 +36,6 @@ function get_turbine_layout(gpla_wf::GPLA, tlparams::TurbineLayoutParams, wfpara
         x[:] = rand(1:size_X_field, no_of_turbines)
     end
 
-    no_of_turbines = tlparams.no_of_turbines
-    X_field = CartIndices_to_Array(turbine_action_space(tlparams, wfparams))
-    size_X_field = size(X_field, 2)
 
     lx = fill(1, no_of_turbines)
     ux = fill(size_X_field, no_of_turbines)

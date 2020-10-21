@@ -3,8 +3,8 @@
 """
 
 @with_kw struct MCMCTurbineLayout <: TurbineLayoutType 
-    no_of_trials = 10
-    no_of_iterations = 75
+    no_of_trials = 300
+    no_of_iterations = 300
 end
 
 function get_turbine_layout(gpla_wf::GPLA, tlparams::TurbineLayoutParams, wfparams::WindFieldBeliefParams, layouttype::MCMCTurbineLayout)
@@ -22,12 +22,12 @@ function get_turbine_layout(gpla_wf::GPLA, tlparams::TurbineLayoutParams, wfpara
     
     while no_of_trials > 0
         
-        init_state, _ = get_random_init_solution(X_field, no_of_turbines, tlparams)
+        init_state, _ = get_turbine_layout(gpla_wf, tlparams, wfparams, GreedyTurbineLayout())
         next_state = mcmc(init_state,
-                        obj_func,
-                        no_of_iterations,
-                        X_field,
-                        tlparams
+                          obj_func,
+                          no_of_iterations,
+                          X_field,
+                          tlparams
         )
 
         next_state_val = obj_func(next_state)
