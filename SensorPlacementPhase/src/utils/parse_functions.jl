@@ -1,4 +1,7 @@
 function show_results_as_dataframe(csv_filenames; normalizer_rewards = 1.0e6)
+
+    if isempty(csv_filenames) return end
+
     μs = []
     σs = []
     pr = []

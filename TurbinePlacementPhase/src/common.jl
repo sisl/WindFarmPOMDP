@@ -6,7 +6,7 @@ abstract type TurbineLayoutType end
 
 @with_kw struct TurbineLayoutParams
     # Layout params
-    layouttype::TurbineLayoutType
+    layouttype::TurbineLayoutType = GreedyTurbineLayout()
     grid_dist = 220                                             # [meters]
     altitudes = [100, 200]                                      # [meters]
 
@@ -256,19 +256,18 @@ end
 function get_ground_truth_profit(s0::WindFarmState, x_sensors::AbstractArray, tlparams::TurbineLayoutParams, wfparams::WindFieldBeliefParams, layouttype::TurbineLayoutType)
 """ Calculate approximate profit of a turbine layout using ground truth, from initial state and solution found. Called after non-sequential solvers. """
 
-    # Get observations
-    x_obs_full = s0.x_obs_full
-    y_obs_full = s0.y_obs_full
-    gpla_wf_full = get_GPLA_for_gen(x_obs_full, y_obs_full, wfparams)
-    x_obs = x_sensors
-    y_obs = rand(gpla_wf_full, x_obs)
-
     # Cost of sensor tower placements
     cost_masts = get_tower_cost.(eachcol(x_sensors))
-
-    # Get belief and ground truth
-    gpla_wf = get_GPLA_for_gen(x_obs, y_obs, wfparams)                      # Latest belief based on previous observations.
+    
+    # Get ground truth
+    x_obs_full = s0.x_obs_full
+    y_obs_full = s0.y_obs_full
     gpla_wf_full = get_GPLA_for_gen(x_obs_full, y_obs_full, wfparams)       # Ground truth.
+
+    # Get latest belief
+    x_obs = x_sensors
+    y_obs = rand(gpla_wf_full, x_obs)
+    gpla_wf = get_GPLA_for_gen(x_obs, y_obs, wfparams)                      # Latest belief based on previous observations.
 
     # Profit of turbine placements
     x_turbines, _ = get_turbine_layout(gpla_wf, tlparams, wfparams, layouttype)

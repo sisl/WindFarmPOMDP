@@ -108,7 +108,7 @@ end
 UCBRolloutPolicy(problem::Union{POMDP,MDP}; rng=Random.GLOBAL_RNG, updater=MCTSRolloutUpdater(problem.altitudes, problem.grid_dist)) = UCBRolloutPolicy(rng, problem, updater)
 
 
-@memoize function get_UCB_rollout_actions(gpla_wf_rollout::GPLA, legal_actions::AbstractArray; top_n_to_consider::Int = 15)
+@memoize function get_UCB_rollout_actions(gpla_wf_rollout::GPLA, legal_actions::AbstractArray; top_n_to_consider::Int = 100)
 
     legal_actions = CartIndices_to_Array(legal_actions)
 
@@ -176,7 +176,7 @@ end
 MIRolloutPolicy(problem::Union{POMDP,MDP}; rng=Random.GLOBAL_RNG, updater=MCTSRolloutUpdater(problem.altitudes, problem.grid_dist)) = MIRolloutPolicy(rng, problem, updater)
 
 
-function get_MI_rollout_actions(gpla_wf_rollout::GPLA, legal_actions::AbstractArray; top_n_to_consider::Int = 15)
+function get_MI_rollout_actions(gpla_wf_rollout::GPLA, legal_actions::AbstractArray; top_n_to_consider::Int = 100)
 
     legal_actions = CartIndices_to_Array(legal_actions)
 

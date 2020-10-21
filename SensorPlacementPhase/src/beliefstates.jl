@@ -52,9 +52,9 @@ end
     theta = [-1.5,                          # measurement noise, σy
              4.0,                           # mean, only used when kernel.mean is MeanConst.
              6.152381297661223,             # ℓ2_sq
-             -0.06877700348630293,          # σ2_sq
+             0.506877700348630293,          # σ2_sq
              6.106476739802775,             # ℓ_lin
-             -0.06871639714265196,          # σ2_lin
+             0.506871639714265196,          # σ2_lin
              0.0,                           # d
              0.05                           # zₒ
     ]
@@ -159,6 +159,9 @@ function initialize_belief_lookup(wfparams::WindFieldBeliefParams)
         Y_mean = vcat(Y_mean, vec(img_ds))
         X_mean = hcat(X_mean, transform4GPjl(X))
     end
+
+    # Add noise to the values of the Mean function
+    Noise.add_gauss!(Y_mean, 0.5)
     
     # Create the lookup mean to the GP
     gpla_wf_mean = MeanLookup(X_mean, Y_mean)

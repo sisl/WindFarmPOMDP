@@ -9,6 +9,8 @@
 /TurbinePlacementPhase/scripts/Figures/
 /TurbinePlacementPhase/scripts/Generic_Run_Results/
 
+*.txt
 *.pdf
 *.png
 *.csv
+*.cmds

@@ -11,6 +11,7 @@ using NearestNeighbors
 using StatsBase
 using BayesianOptimization
 using Memoize
+using Noise
 
 # WindGP repo
 include("../../../WindGP/src/WindGP.jl")

@@ -7,7 +7,7 @@ struct WindFarmPOMDP <: POMDP{WindFarmState, CartesianIndex{3}, AbstractVector}
     delta::Int          # Minimum distance between actions
 end
 
-POMDPs.discount(::WindFarmPOMDP) = 0.9
+POMDPs.discount(::WindFarmPOMDP) = 0.99
 POMDPs.isterminal(p::WindFarmPOMDP, s::WindFarmState) = size(s.x_acts, 2) > p.timesteps
 
 @memoize function get_GPLA_for_gen(X, Y, wfparams::WindFieldBeliefParams)
