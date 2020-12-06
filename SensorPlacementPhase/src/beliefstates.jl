@@ -163,6 +163,7 @@ function initialize_belief_lookup(wfparams::WindFieldBeliefParams)
     # Add noise to the values of the Mean function
     Random.seed!(123)
     Noise.add_gauss!(Y_mean, 2.5)
+    clamp!(Y_mean, 0, Inf)
     
     # Create the lookup mean to the GP
     gpla_wf_mean = MeanLookup(X_mean, Y_mean)

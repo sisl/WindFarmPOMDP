@@ -30,8 +30,13 @@ function get_next_turbine_location(gpla_wf, X_field, layouttype::GreedyTurbineLa
 
     z_value = 1.645    # chosen: 90 percent confidence interval
     LCB = μ - z_value / sqrt(N) * σ
-    best_val = argmax(vec(LCB))    # NOTE: if you get `ERROR: ArgumentError: collection must be non-empty` here, this means there isn't enough space for the specified no_of_turbines.
-
+    LCB_vec = vec(LCB)
+    if isempty(LCB_vec)
+        error("There isn't enough space on the field for the specified no_of_turbines.")
+    else
+        best_val = argmax(vec(LCB))    # NOTE: if you get `ERROR: ArgumentError: collection must be non-empty` here, this means there isn't enough space for the specified no_of_turbines.
+    end
+    
     next_turbine = X_field[:, best_val]
 
     return next_turbine
