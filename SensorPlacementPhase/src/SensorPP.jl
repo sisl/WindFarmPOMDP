@@ -12,6 +12,7 @@ using StatsBase
 using BayesianOptimization
 using Memoize
 using Noise
+using Random
 
 # WindGP repo
 include("../../../WindGP/src/WindGP.jl")
