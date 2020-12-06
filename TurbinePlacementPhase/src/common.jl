@@ -259,8 +259,10 @@ function get_ground_truth_profit(states_history::AbstractArray, tlparams::Turbin
     cost_masts = get_tower_cost.(eachcol(x_sensors))
 
     # Get belief and ground truth
+    x_obs_full = s_final.x_obs_full
+    y_obs_full = s_final.y_obs_full
     gpla_wf = get_GPLA_for_gen(s_final.x_obs, s_final.y_obs, wfparams)                      # Latest belief based on previous observations.
-    gpla_wf_full = get_GPLA_for_gen(s_final.x_obs_full, s_final.y_obs_full, wfparams)       # Ground truth.
+    gpla_wf_full = get_GPLA_for_gen(x_obs_full, y_obs_full, wfparams)       # Ground truth.
 
     # Profit of turbine placements
     x_turbines, _ = get_turbine_layout(gpla_wf, tlparams, wfparams, layouttype)

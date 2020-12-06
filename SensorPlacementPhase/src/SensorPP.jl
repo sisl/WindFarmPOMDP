@@ -1,17 +1,18 @@
 # Modules
+using ArgParse
 using POMDPs, POMDPModelTools, POMDPSimulators, POMDPPolicies
 using BasicPOMCP, POMCPOW
 using Distributions
 using Discretizers
 using Parameters
 using Dates
-using Plots
+# using Plots
 using ImageTransformations
 using NearestNeighbors
 using StatsBase
 using BayesianOptimization
 using Memoize
-using Noise
+import Noise: add_gauss!
 using Random
 
 # WindGP repo

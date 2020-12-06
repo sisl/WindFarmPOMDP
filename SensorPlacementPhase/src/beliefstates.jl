@@ -44,6 +44,7 @@ end
     scale_factor = 20
 
     # Observation Set
+    noise_seed = 123
     grid_dist_obs = grid_dist .* 10
 
     # GPLA
@@ -161,8 +162,8 @@ function initialize_belief_lookup(wfparams::WindFieldBeliefParams)
     end
 
     # Add noise to the values of the Mean function
-    Random.seed!(123)
-    Noise.add_gauss!(Y_mean, 2.5)
+    Random.seed!(wfparams.noise_seed)
+    add_gauss!(Y_mean, 2.5)
     clamp!(Y_mean, 0, Inf)
     
     # Create the lookup mean to the GP
