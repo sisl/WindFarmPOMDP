@@ -233,6 +233,23 @@ end
 turbine_approximate_profits(locs::AbstractVector, X_field, gpla_wf, tlparams) = turbine_approximate_profits(X_field[:, locs], gpla_wf, tlparams)
 get_layout_profit(sp::WindFarmState, gpla_wf::GPLA, tlparams::TurbineLayoutParams, wfparams::WindFieldBeliefParams) = get_layout_profit(sp, gpla_wf, tlparams, wfparams, tlparams.layouttype)
 
+function turbine_ground_profits(x_turbines::AbstractMatrix, x_obs_full, y_obs_full, tlparams; penalty_cost = 2.0e6)
+""" Approximate sum of profits of individual turbines. """
+    kdtree_full = NearestNeighbors.KDTree(x_obs_full)
+    y_obs_idx = knn.(Ref(kdtree_full), eachcol(x_turbines), Ref(1))
+    y_obs_idx = getindex.(y_obs_idx, Ref(1))
+    μ = y_obs_full[vcat(y_obs_idx...)]
+
+    # μ, _ = GaussianProcesses.predict_f(gpla_wf, x_turbines)
+    costs = get_turbine_cost.(eachcol(x_turbines))
+
+    s_avg = get_average_turbine_distances(x_turbines) / tlparams.turbine_diameter
+    profits = get_turbine_profit.(μ, costs, Ref(s_avg), Ref(tlparams))
+
+    result = sum(profits) - penalty_cost * sum(is_solution_separated_Int(x_turbines, tlparams))    # Penalty added for solutions within seperated regions.
+    return Int(round(result))
+end
+
 function get_ground_truth_profit(states_history::AbstractArray, tlparams::TurbineLayoutParams, wfparams::WindFieldBeliefParams, layouttype::TurbineLayoutType)
 """ Calculate approximate profit of a turbine layout using ground truth, from the final state. Called after sequential solvers. """
 
@@ -247,7 +264,7 @@ function get_ground_truth_profit(states_history::AbstractArray, tlparams::Turbin
 
     # Profit of turbine placements
     x_turbines, _ = get_turbine_layout(gpla_wf, tlparams, wfparams, layouttype)
-    expected_turbine_profits = turbine_approximate_profits(x_turbines, gpla_wf_full, tlparams)
+    expected_turbine_profits = turbine_ground_profits(x_turbines, x_obs_full, y_obs_full, tlparams)
 
     total_profit = sum(expected_turbine_profits) - sum(cost_masts)
     return total_profit
@@ -271,7 +288,7 @@ function get_ground_truth_profit(s0::WindFarmState, x_sensors::AbstractArray, tl
 
     # Profit of turbine placements
     x_turbines, _ = get_turbine_layout(gpla_wf, tlparams, wfparams, layouttype)
-    expected_turbine_profits = turbine_approximate_profits(x_turbines, gpla_wf_full, tlparams)
+    expected_turbine_profits = turbine_ground_profits(x_turbines, x_obs_full, y_obs_full, tlparams)
 
     total_profit = sum(expected_turbine_profits) - sum(cost_masts)
     return total_profit
