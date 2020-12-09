@@ -23,12 +23,12 @@ function parse_commandline()
         "--actpolicy", "-A"
             help = "The action branching & rollout policy to be used, if the `solvermethod` uses tree branching."
             range_tester = (x -> x ∈ ["UCB", "MI"])
-            default = nothing
+            default = "UCB"
 
         "--tree_queries", "-T"
             help = "Number of tree queries, if the `solvermethod` uses tree branching."
             arg_type = Int
-            default = nothing
+            default = 100
 
         "--savename", "-N"
             help = "Save name for results. Any valid String accepted. Pass no arguments to skip saving."
@@ -36,11 +36,15 @@ function parse_commandline()
             default = nothing
     end
 
-    parsed_args = parse_args(s, as_symbols=true)
-    parsed_args[:solvermethod] = Symbol(parsed_args[:solvermethod])
-    parsed_args[:layoutfinder] = Symbol(parsed_args[:layoutfinder])
-
-    return parsed_args
+    try      # Enters with actual arguments passed in from the Terminal.
+        parsed_args = parse_args(s, as_symbols=true)
+        parsed_args[:solvermethod] = Symbol(parsed_args[:solvermethod])
+        parsed_args[:layoutfinder] = Symbol(parsed_args[:layoutfinder])
+        return parsed_args
+    catch    # Enters when debugging in Julia REPL.
+        parsed_args = replicate_args()
+        return parsed_args
+    end
 end
 
 function show_args(parsed_args)
@@ -55,7 +59,18 @@ macro show_args(parsed_args)
     return :( show_args($parsed_args) )
 end
 
-
+replicate_args(;solvermethod = "pomcpow",
+                layoutfinder = "greedy", 
+                noise_seed = 123,
+                actpolicy = "UCB",
+                tree_queries = 250,
+                savename = nothing) =  Dict(:solvermethod => Symbol(solvermethod),
+                                            :layoutfinder => Symbol(layoutfinder),
+                                            :noise_seed   => noise_seed,
+                                            :actpolicy    => actpolicy,
+                                            :tree_queries => tree_queries,
+                                            :savename     => savename
+)
 
 """
     Functions for parsing solution results.

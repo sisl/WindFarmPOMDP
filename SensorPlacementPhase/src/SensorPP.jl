@@ -25,3 +25,5 @@ include("./policies.jl")
 include("./common.jl")
 include("./utils/plot_functions.jl")
 include("./utils/parse_functions.jl")
+
+println("### SensorPP.jl loaded ###")

@@ -3,8 +3,8 @@
 """
 function POMCPOWPlanner(pomdp, extra_params)
 
-    actpolicy = Symbol(isempty(extra_params) ? "UCB" : extra_params[1])
-    tree_queries = parse(Int, isempty(extra_params) ? "100" : extra_params[2])
+    actpolicy = Symbol(extra_params[1])
+    tree_queries = extra_params[2]
 
     actpolicy_dict = Dict(
         :UCB        => POMCPOWPlanner_UCB(pomdp, tree_queries),

@@ -13,3 +13,5 @@ include("./common.jl")
 include("./greedy_turbinelayout.jl")
 include("./genetic_turbinelayout.jl")
 include("./mcmc_turbinelayout.jl")
+
+println("### TurbinePP.jl loaded ###")
