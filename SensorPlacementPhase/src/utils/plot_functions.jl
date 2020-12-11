@@ -1,3 +1,6 @@
+global HEATMAP_μ_CLIM = (0.0, 15.0)
+global HEATMAP_σ_CLIM = (0.0, 3.0)
+
 transform_FieldCoord_to_PlotCoord(x, wfparams) = x[1:2] / wfparams.grid_dist + [1,1]    # [1,1] is added because locations are 0-based indexed.
 
 function save_rewards_to_disk(script_id::Symbol, rewards_history::AbstractArray, savename::String)
@@ -10,7 +13,7 @@ function save_rewards_to_disk(script_id::Symbol, rewards_history::AbstractArray,
     return nothing
 end
 
-function plot_WindFarmPOMDP_policy!(script_id::Symbol, wfparams::WindFieldBeliefParams, actions_history::AbstractArray, rewards_history::AbstractArray, b0::WindFarmBelief; savetype = :png)
+function plot_WindFarmPOMDP_policy(script_id::Symbol, wfparams::WindFieldBeliefParams, actions_history::AbstractArray, rewards_history::AbstractArray, b0::WindFarmBelief; savetype = :png)
     println("### Creating Policy Plots ###")
     savetype = String(savetype)
     nx, ny = wfparams.nx, wfparams.ny
@@ -34,7 +37,7 @@ function plot_WindFarmPOMDP_policy!(script_id::Symbol, wfparams::WindFieldBelief
         end
         
         X_field, Y_field = get_dataset(Map, [h], wfparams.grid_dist, wfparams.grid_dist, 1, wfparams.nx, 1, wfparams.ny)
-        p = Plots.heatmap(reshape(Y_field, (nx,ny)), title="Wind Farm Sensor Locations Chosen, h = $(h)m")
+        p = Plots.heatmap(reshape(Y_field, (nx,ny)), clim=HEATMAP_μ_CLIM, title="Wind Farm Sensor Locations Chosen, h = $(h)m")
         Plots.scatter!(a_in_h[2,:], a_in_h[1,:], legend=false, color=:white)  # Notice that the row and col of `a_in_h` is reversed.
         Plots.savefig(p, "./$dir/Plot_$h.$savetype")
     
@@ -42,11 +45,11 @@ function plot_WindFarmPOMDP_policy!(script_id::Symbol, wfparams::WindFieldBelief
         μ, σ² = GaussianProcesses.predict_f(gpla_wf, X_field)
         σ = sqrt.(σ²)
 
-        p2 = Plots.heatmap(reshape(σ, (nx,ny)), title="Wind Farm Initial Belief Variance, h = $(h)m")
+        p2 = Plots.heatmap(reshape(σ, (nx,ny)), clim=HEATMAP_σ_CLIM, title="Wind Farm Initial Belief Variance, h = $(h)m")
         Plots.scatter!(a_in_h[2,:], a_in_h[1,:], legend=false, color=:white)  # Notice that the row and col of `a_in_h` is reversed.
         Plots.savefig(p2, "./$dir/Plot2_$h.$savetype")
 
-        p3 = Plots.heatmap(reshape(μ, (nx,ny)), title="Wind Farm Initial Belief Mean, h = $(h)m")
+        p3 = Plots.heatmap(reshape(μ, (nx,ny)), clim=HEATMAP_μ_CLIM, title="Wind Farm Initial Belief Mean, h = $(h)m")
         Plots.scatter!(a_in_h[2,:], a_in_h[1,:], legend=false, color=:white)  # Notice that the row and col of `a_in_h` is reversed.
         Plots.savefig(p3, "./$dir/Plot3_$h.$savetype")
 
@@ -57,7 +60,7 @@ function plot_WindFarmPOMDP_policy!(script_id::Symbol, wfparams::WindFieldBelief
     return nothing
 end
 
-function plot_WindFarmPOMDP_belief_history!(wfparams::WindFieldBeliefParams, actions_history::AbstractArray, belief_history::AbstractArray, b0::WindFarmBelief; savetype = :png)
+function plot_WindFarmPOMDP_belief_history(wfparams::WindFieldBeliefParams, actions_history::AbstractArray, belief_history::AbstractArray, b0::WindFarmBelief; savetype = :png)
     println("### Creating Policy Plots ###")
     nx, ny = wfparams.nx, wfparams.ny
     Map = get_3D_data(wfparams.farm; altitudes=wfparams.altitudes)
@@ -90,11 +93,11 @@ function plot_WindFarmPOMDP_belief_history!(wfparams::WindFieldBeliefParams, act
             μ, σ² = GaussianProcesses.predict_f(gpla_wf, X_field)
             σ = sqrt.(σ²)
 
-            p2 = Plots.heatmap(reshape(σ, (nx,ny)), title="Variance of Belief at t=$(t), h = $(h)m")
+            p2 = Plots.heatmap(reshape(σ, (nx,ny)), clim=HEATMAP_σ_CLIM, title="Variance of Belief at t=$(t), h = $(h)m")
             Plots.scatter!(a_in_h[2,:], a_in_h[1,:], legend=false, color=:white)  # Notice that the row and col of `a_in_h` is reversed.
             Plots.savefig(p2, "./$dir/PlotVar_t$(t)_h$(h).$savetype")
 
-            p3 = Plots.heatmap(reshape(μ, (nx,ny)), title="Mean of Belief at t=$(t), h = $(h)m")
+            p3 = Plots.heatmap(reshape(μ, (nx,ny)), clim=HEATMAP_μ_CLIM, title="Mean of Belief at t=$(t), h = $(h)m")
             Plots.scatter!(a_in_h[2,:], a_in_h[1,:], legend=false, color=:white)  # Notice that the row and col of `a_in_h` is reversed.
             Plots.savefig(p3, "./$dir/PlotMean_t$(t)_h$(h).$savetype")
 
@@ -146,12 +149,12 @@ function plot_WindFarmPOMDP_TPP_history(wfparams::WindFieldBeliefParams, actions
         x_turbines, _ = get_turbine_layout(gpla_wf, tlparams, wfparams, tlparams.layouttype)
         x_turbines = hcat(transform_FieldCoord_to_PlotCoord.(eachcol(x_turbines), Ref(wfparams))...)
 
-        p2 = Plots.heatmap(reshape(σ, (nx,ny)), title="Variance of Belief at t=$(t), h = $(h)m")
+        p2 = Plots.heatmap(reshape(σ, (nx,ny)), clim=HEATMAP_σ_CLIM, title="Variance of Belief at t=$(t), h = $(h)m")
         Plots.scatter!(x_turbines[2,:], x_turbines[1,:], m=:square, legend=false, color=turbine_color)     # Notice that the row and col of `a_in_t` is reversed.
         Plots.scatter!(a_in_t[2,:], a_in_t[1,:], legend=false, color=sensor_color)                         # Notice that the row and col of `a_in_t` is reversed.
         Plots.savefig(p2, "./$dir/PlotVar_t$(t)_h$(h).$savetype")
 
-        p3 = Plots.heatmap(reshape(μ, (nx,ny)), title="Mean of Belief at t=$(t), h = $(h)m")
+        p3 = Plots.heatmap(reshape(μ, (nx,ny)), clim=HEATMAP_μ_CLIM, title="Mean of Belief at t=$(t), h = $(h)m")
         Plots.scatter!(x_turbines[2,:], x_turbines[1,:], m=:square, legend=false, color=turbine_color)     # Notice that the row and col of `a_in_t` is reversed.
         Plots.scatter!(a_in_t[2,:], a_in_t[1,:], legend=false, color=sensor_color)                         # Notice that the row and col of `a_in_t` is reversed.
         Plots.savefig(p3, "./$dir/PlotMean_t$(t)_h$(h).$savetype")
@@ -209,12 +212,12 @@ function plot_WindFarmPOMDP_TPP_history(wfparams::WindFieldBeliefParams, soln::A
         x_turbines, _ = get_turbine_layout(b_gpla_wf, tlparams, wfparams, tlparams.layouttype)
         x_turbines = hcat(transform_FieldCoord_to_PlotCoord.(eachcol(x_turbines), Ref(wfparams))...)
 
-        p2 = Plots.heatmap(reshape(σ, (nx,ny)), title="Variance of Belief at t=$(t), h = $(h)m")
+        p2 = Plots.heatmap(reshape(σ, (nx,ny)), clim=HEATMAP_σ_CLIM, title="Variance of Belief at t=$(t), h = $(h)m")
         Plots.scatter!(x_turbines[2,:], x_turbines[1,:], m=:square, legend=false, color=turbine_color)     # Notice that the row and col of `a_in_t` is reversed.
         Plots.scatter!(a_in_t[2,:], a_in_t[1,:], legend=false, color=sensor_color)                         # Notice that the row and col of `a_in_t` is reversed.
         Plots.savefig(p2, "./$dir/PlotVar_t$(t)_h$(h).$savetype")
 
-        p3 = Plots.heatmap(reshape(μ, (nx,ny)), title="Mean of Belief at t=$(t), h = $(h)m")
+        p3 = Plots.heatmap(reshape(μ, (nx,ny)), clim=HEATMAP_μ_CLIM, title="Mean of Belief at t=$(t), h = $(h)m")
         Plots.scatter!(x_turbines[2,:], x_turbines[1,:], m=:square, legend=false, color=turbine_color)     # Notice that the row and col of `a_in_t` is reversed.
         Plots.scatter!(a_in_t[2,:], a_in_t[1,:], legend=false, color=sensor_color)                         # Notice that the row and col of `a_in_t` is reversed.
         Plots.savefig(p3, "./$dir/PlotMean_t$(t)_h$(h).$savetype")
@@ -224,3 +227,11 @@ function plot_WindFarmPOMDP_TPP_history(wfparams::WindFieldBeliefParams, soln::A
     println("### Plots Saved to $dir ###")
     return nothing
 end
+
+
+""" Global versions below """
+save_rewards_to_disk() = save_rewards_to_disk(script_id, rewards_history, savename)
+plot_WindFarmPOMDP_policy() = plot_WindFarmPOMDP_policy(script_id, wfparams, actions_history, rewards_history, b0)
+plot_WindFarmPOMDP_belief_history() = plot_WindFarmPOMDP_belief_history(wfparams, actions_history, belief_history, b0)
+plot_WindFarmPOMDP_TPP_history() = plot_WindFarmPOMDP_TPP_history(wfparams, actions_history, belief_history, b0)
+plot_WindFarmPOMDP_TPP_history_non_seq() = plot_WindFarmPOMDP_TPP_history(wfparams, soln, b0, s0) 
