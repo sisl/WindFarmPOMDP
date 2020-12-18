@@ -76,11 +76,17 @@ function initialize_belief_rollout(s::WindFarmState)
     return WindFarmBelief(x_acts, gpla_wf)
 end
 
-function initialize_belief_sparse(wfparams::WindFieldBeliefParams)
+function initialize_belief_perfect(wfparams::WindFieldBeliefParams; is_sparse=false)
+
+    if is_sparse    # initial belief knowledge has no noise, but is sparse.
+        grid_dist_obs = wfparams.grid_dist_obs
+    else            # initial belief knowledge has no noise, and is the entire field.
+        grid_dist_obs = wfparams.grid_dist
+    end
 
     # Load prior points for belief GP
     Map = get_3D_data(wfparams.farm; altitudes=wfparams.altitudes)
-    X_obs, _ = get_dataset(Map, wfparams.altitudes, wfparams.grid_dist_obs, wfparams.grid_dist, 1, wfparams.nx+1, 1, wfparams.ny+1)
+    X_obs, _ = get_dataset(Map, wfparams.altitudes, grid_dist_obs, wfparams.grid_dist, 1, wfparams.nx+1, 1, wfparams.ny+1)
     Y_obs = map(lambda -> get_Y_from_farm_location(lambda, Map, wfparams.grid_dist), collect(eachcol(X_obs)))
 
     # Create initial kernel
@@ -128,7 +134,7 @@ function initialize_belief_no_prior(wfparams::WindFieldBeliefParams)
     return WindFarmBelief(x_acts, gpla_wf)
 end
 
-function initialize_belief_lookup(wfparams::WindFieldBeliefParams)
+function initialize_belief_lookup(wfparams::WindFieldBeliefParams; has_noise=true)
     """ This version has no observation points in the Gaussian prior, but instead, we the mean function of the GP is 
         a lookup table of the downsampled version of the GWA data of the specified altitudes.
     """
@@ -163,8 +169,10 @@ function initialize_belief_lookup(wfparams::WindFieldBeliefParams)
 
     # Add noise to the values of the Mean function
     Random.seed!(wfparams.noise_seed)
-    add_gauss!(Y_mean, 2.5)
-    clamp!(Y_mean, 0, Inf)
+    if has_noise
+        add_gauss!(Y_mean, 3.0)
+        clamp!(Y_mean, 0, Inf)
+    end
     
     # Create the lookup mean to the GP
     gpla_wf_mean = MeanLookup(X_mean, Y_mean)
