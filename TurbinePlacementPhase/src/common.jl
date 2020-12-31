@@ -226,8 +226,9 @@ function get_layout_profit(sp::WindFarmState, gpla_wf::GPLA, tlparams::TurbineLa
     x_turbines, _ = get_turbine_layout(gpla_wf, tlparams, wfparams, layouttype)
     expected_turbine_profits = turbine_approximate_profits(x_turbines, gpla_wf, tlparams)
 
-    total_profit = sum(expected_turbine_profits) - sum(cost_masts)
-    return total_profit
+    # total_profit = sum(expected_turbine_profits) - sum(cost_masts)
+    # return total_profit
+    return sum(expected_turbine_profits)
 end
 
 turbine_approximate_profits(locs::AbstractVector, X_field, gpla_wf, tlparams) = turbine_approximate_profits(X_field[:, locs], gpla_wf, tlparams)
@@ -268,8 +269,9 @@ function get_ground_truth_profit(states_history::AbstractArray, tlparams::Turbin
     x_turbines, _ = get_turbine_layout(gpla_wf, tlparams, wfparams, layouttype)
     expected_turbine_profits = turbine_ground_profits(x_turbines, x_obs_full, y_obs_full, tlparams)
 
-    total_profit = sum(expected_turbine_profits) - sum(cost_masts)
-    return total_profit
+    # total_profit = sum(expected_turbine_profits) - sum(cost_masts)
+    # return total_profit
+    return sum(expected_turbine_profits)
 end
 
 function get_ground_truth_profit(s0::WindFarmState, x_sensors::AbstractArray, tlparams::TurbineLayoutParams, wfparams::WindFieldBeliefParams, layouttype::TurbineLayoutType)
@@ -292,8 +294,9 @@ function get_ground_truth_profit(s0::WindFarmState, x_sensors::AbstractArray, tl
     x_turbines, _ = get_turbine_layout(gpla_wf, tlparams, wfparams, layouttype)
     expected_turbine_profits = turbine_ground_profits(x_turbines, x_obs_full, y_obs_full, tlparams)
 
-    total_profit = sum(expected_turbine_profits) - sum(cost_masts)
-    return total_profit
+    # total_profit = sum(expected_turbine_profits) - sum(cost_masts)
+    # return total_profit
+    return sum(expected_turbine_profits)
 end
 
 get_ground_truth_profit(states_history::AbstractArray, tlparams::TurbineLayoutParams, wfparams::WindFieldBeliefParams) = get_ground_truth_profit(states_history, tlparams, wfparams, tlparams.layouttype)
@@ -301,17 +304,18 @@ get_ground_truth_profit(s0::WindFarmState, x_sensors::AbstractArray, tlparams::T
 
 function get_turbine_profit(ui, turbine_cost, s_avg, tlparams)
 """ Follows the heuristic as described in Stevens et al. """
-    θ = 1.0e-3
-    β = 5.0e-3
-    γ = 4
+    # θ = 1.0e-3
+    # β = 5.0e-3
+    # γ = 4
 
-    P∞ = get_turbine_power_output(ui, tlparams)
-    P₁ = tlparams.turbine_max_power
+    # P∞ = get_turbine_power_output(ui, tlparams)
+    # P₁ = tlparams.turbine_max_power
 
-    # Calculate the ratio between Revenue and Costs, for a single turbine.
-    profit_star = (P∞ / P₁) * γ - (1 + β * s_avg + θ * s_avg^2)
+    # # Calculate the ratio between Revenue and Costs, for a single turbine.
+    # profit_star = (P∞ / P₁) * γ - (1 + β * s_avg + θ * s_avg^2)
 
-    return profit_star * turbine_cost
+    # return profit_star * turbine_cost
+    return ui^3
 end
 
 function get_turbine_power_output(ui, tlparams)

@@ -93,7 +93,7 @@ function plot_WindFarmPOMDP_belief_history(wfparams::WindFieldBeliefParams, acti
             μ, σ² = GaussianProcesses.predict_f(gpla_wf, X_field)
             σ = sqrt.(σ²)
 
-            p2 = Plots.heatmap(reshape(σ, (nx,ny)), clim=HEATMAP_σ_CLIM, title="Variance of Belief at t=$(t), h = $(h)m")
+            p2 = Plots.heatmap(reshape(σ, (nx,ny)), clim=HEATMAP_σ_CLIM, title="Std of Belief at t=$(t), h = $(h)m")
             Plots.scatter!(a_in_h[2,:], a_in_h[1,:], legend=false, color=:white)  # Notice that the row and col of `a_in_h` is reversed.
             Plots.savefig(p2, "./$dir/PlotVar_t$(t)_h$(h).$savetype")
 
@@ -149,7 +149,7 @@ function plot_WindFarmPOMDP_TPP_history(wfparams::WindFieldBeliefParams, actions
         x_turbines, _ = get_turbine_layout(gpla_wf, tlparams, wfparams, tlparams.layouttype)
         x_turbines = hcat(transform_FieldCoord_to_PlotCoord.(eachcol(x_turbines), Ref(wfparams))...)
 
-        p2 = Plots.heatmap(reshape(σ, (nx,ny)), clim=HEATMAP_σ_CLIM, title="Variance of Belief at t=$(t), h = $(h)m")
+        p2 = Plots.heatmap(reshape(σ, (nx,ny)), clim=HEATMAP_σ_CLIM, title="Std of Belief at t=$(t), h = $(h)m")
         Plots.scatter!(x_turbines[2,:], x_turbines[1,:], m=:square, legend=false, color=turbine_color)     # Notice that the row and col of `a_in_t` is reversed.
         Plots.scatter!(a_in_t[2,:], a_in_t[1,:], legend=false, color=sensor_color)                         # Notice that the row and col of `a_in_t` is reversed.
         Plots.savefig(p2, "./$dir/PlotVar_t$(t)_h$(h).$savetype")
@@ -212,7 +212,7 @@ function plot_WindFarmPOMDP_TPP_history(wfparams::WindFieldBeliefParams, soln::A
         x_turbines, _ = get_turbine_layout(b_gpla_wf, tlparams, wfparams, tlparams.layouttype)
         x_turbines = hcat(transform_FieldCoord_to_PlotCoord.(eachcol(x_turbines), Ref(wfparams))...)
 
-        p2 = Plots.heatmap(reshape(σ, (nx,ny)), clim=HEATMAP_σ_CLIM, title="Variance of Belief at t=$(t), h = $(h)m")
+        p2 = Plots.heatmap(reshape(σ, (nx,ny)), clim=HEATMAP_σ_CLIM, title="Std of Belief at t=$(t), h = $(h)m")
         Plots.scatter!(x_turbines[2,:], x_turbines[1,:], m=:square, legend=false, color=turbine_color)     # Notice that the row and col of `a_in_t` is reversed.
         Plots.scatter!(a_in_t[2,:], a_in_t[1,:], legend=false, color=sensor_color)                         # Notice that the row and col of `a_in_t` is reversed.
         Plots.savefig(p2, "./$dir/PlotVar_t$(t)_h$(h).$savetype")
