@@ -5,7 +5,7 @@
 struct RandomPlanner end
 
 # Constructor
-RandomPlanner(pomdp::WindFarmPOMDP, extra_params::AbstractArray) = RandomPlanner()
+RandomPlanner(pomdp::WindFarmPOMDP, extra_params::Vector) = RandomPlanner()
 
 
 function get_solution(pomdp::WindFarmPOMDP, solver::RandomPlanner)

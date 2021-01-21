@@ -1,22 +1,22 @@
 struct WindFarmState
-    x_acts::AbstractArray   # actions taken so far.
-    x_obs::AbstractArray    # locations observed so far.
-    y_obs::AbstractArray    # values of locations observed so far.
-    x_obs_full::AbstractArray    # locations on entire map, if applicable. only for the actual states, not belief hallucinations during tree search.
-    y_obs_full::AbstractArray    # values of locations on entire map, if applicable. only for the actual states, not belief hallucinations during tree search.
+    x_acts::Matrix{Float64}        # actions taken so far.
+    x_obs::Matrix{Float64}         # locations observed so far.
+    y_obs::Vector{Float64}         # values of locations observed so far.
+    x_obs_full::Matrix{Float64}    # locations on entire map, if applicable. only for the actual states, not belief hallucinations during tree search.
+    y_obs_full::Vector{Float64}    # values of locations on entire map, if applicable. only for the actual states, not belief hallucinations during tree search.
 end
 
 struct WindFarmBelief
-    x_acts::AbstractArray
+    x_acts::Matrix{Float64}
     gpla_wf::GPLA
 end
 
 struct WindFarmBeliefUpdater <: POMDPs.Updater
-    altitudes::AbstractVector
+    altitudes::Vector{Number}
     grid_dist::Int
 end
 
-function POMDPs.update(bu::WindFarmBeliefUpdater, old_b::WindFarmBelief, a::CartesianIndex{3}, obs::AbstractVector)
+function POMDPs.update(bu::WindFarmBeliefUpdater, old_b::WindFarmBelief, a::CartesianIndex{3}, obs::Vector)
     a0 = CartIndices_to_Vector(a)
     a = expand_action_to_below_altitudes(a, bu.altitudes)
     a = CartIndices_to_Array(a)

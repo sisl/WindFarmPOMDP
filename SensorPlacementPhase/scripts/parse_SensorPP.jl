@@ -1,6 +1,7 @@
 using DelimitedFiles
 using DataFrames
 using Statistics
+using ArgParse
 include("../src/utils/parse_functions.jl")
 
 csv_dir = isempty(Main.ARGS) ? "./Generic_Run_Results/" : ARGS[1]

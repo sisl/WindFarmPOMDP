@@ -26,7 +26,7 @@ function parse_commandline()
             default = "UCB"
 
         "--tree_queries", "-T"
-            help = "Number of tree queries, if the `solvermethod` uses tree branching."
+            help = "Number of tree queries, considered if the `solvermethod` uses tree branching."
             arg_type = Int
             default = 100
 
@@ -59,7 +59,7 @@ macro show_args(parsed_args)
     return :( show_args($parsed_args) )
 end
 
-replicate_args(;solvermethod = "greedy",
+replicate_args(;solvermethod = "random",
                 layoutfinder = "greedy", 
                 noise_seed = 123,
                 actpolicy = "UCB",
@@ -75,7 +75,7 @@ replicate_args(;solvermethod = "greedy",
 """
     Functions for parsing solution results.
 """
-function show_results_as_dataframe(csv_filenames; normalizer_rewards = 1.0e6)
+function show_results_as_dataframe(csv_filenames; normalizer_rewards = 1.0)  # normalizer_rewards = 1.0e6
 
     if isempty(csv_filenames) return end
 

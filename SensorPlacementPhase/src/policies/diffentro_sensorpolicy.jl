@@ -20,10 +20,10 @@ mutable struct DiffEntroPolicy{RNG<:AbstractRNG, P<:Union{POMDP,MDP}, U<:Updater
 end
 # The constructor below should be used to create the policy so that the action space is initialized correctly
 DiffEntroPolicy(problem::Union{POMDP,MDP}; rng=Random.GLOBAL_RNG, updater=POMDPPolicies.NothingUpdater()) = DiffEntroPolicy(rng, problem, updater)
-DiffEntroPolicy(problem::Union{POMDP,MDP}, extra_params::AbstractArray) = DiffEntroPolicy(problem)
+DiffEntroPolicy(problem::Union{POMDP,MDP}, extra_params::Vector) = DiffEntroPolicy(problem)
 
 
-function greedyDiffEntroPolicy(gpla_wf::GPLA, legal_actions::AbstractArray, pomdp::WindFarmPOMDP)
+function greedyDiffEntroPolicy(gpla_wf::GPLA, legal_actions::Vector{CartesianIndex{3}}, pomdp::WindFarmPOMDP)
     legal_actions = CartIndices_to_Array([item for item in legal_actions if item[3]==pomdp.altitudes[end]])
     
     conditional_entropy(σ²) = 0.5 * log(2 * pi * exp(1) * σ²)

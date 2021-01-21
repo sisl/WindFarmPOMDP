@@ -23,10 +23,11 @@ end
 UCBGreedyPolicy(problem::POMDP; rng=Random.GLOBAL_RNG, updater=POMDPPolicies.NothingUpdater()) = UCBGreedyPolicy(rng, problem, updater)
 UCBGreedyPolicy(pomdp::POMDP, extra_params) = UCBGreedyPolicy(pomdp)
 
-function greedyUCBExpert(gpla_wf::GPLA, legal_actions::AbstractArray)
+function greedyUCBExpert(gpla_wf::GPLA, legal_actions::Vector{CartesianIndex{3}})
     legal_actions = CartIndices_to_Array(legal_actions)
 
     μ, σ² = GaussianProcesses.predict_f(gpla_wf, legal_actions)
+
     σ = sqrt.(σ²)
     N = max(1, length(gpla_wf.y))
 
@@ -58,11 +59,11 @@ abstract type MCTSRolloutPolicies <: POMDPs.Policy end
 struct EmptyBeliefNode <: BasicPOMCP.BeliefNode end
 
 struct MCTSRolloutUpdater <: POMDPs.Updater
-    altitudes::AbstractVector
+    altitudes::Vector{Number}
     grid_dist::Int
 end
 
-function POMDPs.update(bu::MCTSRolloutUpdater, old_b::WindFarmBelief, a::CartesianIndex{3}, obs::AbstractVector)
+function POMDPs.update(bu::MCTSRolloutUpdater, old_b::WindFarmBelief, a::CartesianIndex{3}, obs::Vector{Float64})
     a0 = CartIndices_to_Vector(a)
     a = expand_action_to_below_altitudes(a, bu.altitudes)
     a = CartIndices_to_Array(a)
@@ -108,7 +109,7 @@ end
 UCBRolloutPolicy(problem::Union{POMDP,MDP}; rng=Random.GLOBAL_RNG, updater=MCTSRolloutUpdater(problem.altitudes, problem.grid_dist)) = UCBRolloutPolicy(rng, problem, updater)
 
 
-@memoize function get_UCB_rollout_actions(gpla_wf_rollout::GPLA, legal_actions::AbstractArray; top_n_to_consider::Int = 100)
+@memoize function get_UCB_rollout_actions(gpla_wf_rollout::GPLA, legal_actions::Vector{CartesianIndex{3}}; top_n_to_consider::Int = 100)
 
     legal_actions = CartIndices_to_Array(legal_actions)
 
@@ -176,7 +177,7 @@ end
 MIRolloutPolicy(problem::Union{POMDP,MDP}; rng=Random.GLOBAL_RNG, updater=MCTSRolloutUpdater(problem.altitudes, problem.grid_dist)) = MIRolloutPolicy(rng, problem, updater)
 
 
-function get_MI_rollout_actions(gpla_wf_rollout::GPLA, legal_actions::AbstractArray; top_n_to_consider::Int = 100)
+function get_MI_rollout_actions(gpla_wf_rollout::GPLA, legal_actions::Vector{CartesianIndex{3}}; top_n_to_consider::Int = 100)
 
     legal_actions = CartIndices_to_Array(legal_actions)
 

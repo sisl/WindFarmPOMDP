@@ -1,11 +1,13 @@
-struct WindFarmPOMDP <: POMDP{WindFarmState, CartesianIndex{3}, AbstractVector}
+struct WindFarmPOMDP <: POMDP{WindFarmState, CartesianIndex{3}, Vector{Float64}}
     nx::Int
     ny::Int
     grid_dist::Int
-    altitudes::AbstractVector
+    altitudes::Vector{Number}
     timesteps::Int
     delta::Int          # Minimum distance between actions
 end
+
+WindFarmPOMDP(wfparams, no_of_sensors, delta) = WindFarmPOMDP(wfparams.nx, wfparams.ny, wfparams.grid_dist, wfparams.altitudes, no_of_sensors, delta)
 
 POMDPs.discount(::WindFarmPOMDP) = 0.99
 POMDPs.isterminal(p::WindFarmPOMDP, s::WindFarmState) = size(s.x_acts, 2) > p.timesteps
@@ -27,9 +29,9 @@ POMDPs.isterminal(p::WindFarmPOMDP, s::WindFarmState) = size(s.x_acts, 2) > p.ti
     return gpla_wf
 end
 
-""" State: WindFarmState
+""" State:  WindFarmState
     Action: CartesianIndex{3}
-    Obs: Int
+    Obs:    Float64
 """
 function POMDPs.gen(m::WindFarmPOMDP, s::WindFarmState, a0::CartesianIndex{3}, rng::AbstractRNG)
 
@@ -77,7 +79,7 @@ function POMDPs.gen(m::WindFarmPOMDP, s::WindFarmState, a0::CartesianIndex{3}, r
 end
 
 # P(o|s,a,s')
-function POMDPModelTools.obs_weight(p::WindFarmPOMDP, s::WindFarmState, a::CartesianIndex{3}, sp::WindFarmState, o::AbstractVector)
+function POMDPModelTools.obs_weight(p::WindFarmPOMDP, s::WindFarmState, a::CartesianIndex{3}, sp::WindFarmState, o::Vector{Float64})
     a = CartIndices_to_Vector(a)
 
     gpla_wf = get_GPLA_for_gen(s.x_obs, s.y_obs, wfparams)
@@ -133,9 +135,9 @@ end
 ## Expand Actions ##
 ####################
 
-expand_action_to_altitudes(a::CartesianIndex, altitudes::AbstractVector) = [CartesianIndex(a[1], a[2], h) for h in altitudes]
-expand_action_to_other_altitudes(a::CartesianIndex, altitudes::AbstractVector) = [CartesianIndex(a[1], a[2], h) for h in setdiff(Set(altitudes),a[3])]
-expand_action_to_below_altitudes(a::CartesianIndex, altitudes::AbstractVector) = [CartesianIndex(a[1], a[2], h) for h in altitudes if h <= a[3]]
+expand_action_to_altitudes(a::CartesianIndex, altitudes::Vector{Number}) = [CartesianIndex(a[1], a[2], h) for h in altitudes]
+expand_action_to_other_altitudes(a::CartesianIndex, altitudes::Vector{Number}) = [CartesianIndex(a[1], a[2], h) for h in setdiff(Set(altitudes),a[3])]
+expand_action_to_below_altitudes(a::CartesianIndex, altitudes::Vector{Number}) = [CartesianIndex(a[1], a[2], h) for h in altitudes if h <= a[3]]
 
 function expand_action_to_limits(a::CartesianIndex, altitudes, grid_dist, delta)
     """ Creates an array of blocked locations (considering both altitude and delta limits), given an action. """

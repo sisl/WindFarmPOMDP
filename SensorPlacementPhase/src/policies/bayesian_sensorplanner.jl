@@ -8,7 +8,7 @@
 end
 
 # Constructor
-BayesianPlanner(pomdp::WindFarmPOMDP, extra_params::AbstractArray) = BayesianPlanner(parse.(Int, extra_params)...)
+BayesianPlanner(pomdp::WindFarmPOMDP, extra_params::Vector) = BayesianPlanner(parse.(Int, extra_params)...)
 
 
 function get_solution(s0::WindFarmState, pomdp::WindFarmPOMDP, tlparams, wfparams, solver::BayesianPlanner, layouttype)
