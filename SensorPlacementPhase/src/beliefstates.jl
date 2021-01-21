@@ -130,6 +130,9 @@ function initialize_belief_no_prior(wfparams::WindFieldBeliefParams)
     gpla_wf = GPLA(X_obs, Y_obs, wfparams.num_neighbors, 0, 0, MeanConst(wfparams.theta[2]), kernel, wfparams.theta[1])
     GaussianProcesses.set_params!(gpla_wf, wfparams.theta)
 
+    # Customize constant mean value
+    gpla_wf.mean = MeanConst(10.0)
+
     x_acts = reshape(Float64[],3,0)
     return WindFarmBelief(x_acts, gpla_wf)
 end

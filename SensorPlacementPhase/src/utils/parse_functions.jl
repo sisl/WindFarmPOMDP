@@ -59,7 +59,7 @@ macro show_args(parsed_args)
     return :( show_args($parsed_args) )
 end
 
-replicate_args(;solvermethod = "random",
+replicate_args(;solvermethod = "greedy",
                 layoutfinder = "greedy", 
                 noise_seed = 123,
                 actpolicy = "UCB",

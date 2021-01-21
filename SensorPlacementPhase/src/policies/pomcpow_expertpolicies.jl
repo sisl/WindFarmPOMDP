@@ -109,7 +109,7 @@ end
 UCBRolloutPolicy(problem::Union{POMDP,MDP}; rng=Random.GLOBAL_RNG, updater=MCTSRolloutUpdater(problem.altitudes, problem.grid_dist)) = UCBRolloutPolicy(rng, problem, updater)
 
 
-@memoize function get_UCB_rollout_actions(gpla_wf_rollout::GPLA, legal_actions::Vector{CartesianIndex{3}}; top_n_to_consider::Int = 100)
+@memoize function get_UCB_rollout_actions(gpla_wf_rollout::GPLA, legal_actions::Vector{CartesianIndex{3}}; top_n_to_consider::Int = 15)
 
     legal_actions = CartIndices_to_Array(legal_actions)
 
