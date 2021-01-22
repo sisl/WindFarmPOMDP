@@ -59,11 +59,11 @@ macro show_args(parsed_args)
     return :( show_args($parsed_args) )
 end
 
-replicate_args(;solvermethod = "pomcpow",
+replicate_args(;solvermethod = "random",
                 layoutfinder = "greedy", 
                 noise_seed = 1,
                 actpolicy = "UCB",
-                tree_queries = 50,
+                tree_queries = 200,
                 savename = nothing) =  Dict(:solvermethod => Symbol(solvermethod),
                                             :layoutfinder => Symbol(layoutfinder),
                                             :noise_seed   => noise_seed,

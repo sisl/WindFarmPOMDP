@@ -178,7 +178,7 @@ function initialize_belief_lookup(wfparams::WindFieldBeliefParams; has_noise=tru
     end
     
     # Create the lookup mean to the GP
-    gpla_wf_mean = MeanLookup(X_mean, Y_mean)
+    gpla_wf_mean = MeanLookup(X_mean, Y_mean, CartIndices_to_Array(actions(pomdp)))
 
     # Create initial kernel
     kernel = WLK_SEIso(eps(), eps(), eps(), eps(), eps(), eps())
