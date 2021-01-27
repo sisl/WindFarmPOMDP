@@ -70,11 +70,16 @@ function POMDPs.gen(m::WindFarmPOMDP, s::WindFarmState, a0::CartesianIndex{3}, r
     # Discretize observation to avoid shallow trees
     o = round.(o * 2)/2   # rounds to nearest 0.5
     
-    # Get reward
-    GaussianProcesses.fit!(gpla_wf, sp_x_obs, sp_y_obs)
-    r = get_layout_profit(sp, gpla_wf, tlparams, wfparams)    /20000
+    # Get reward (only in last sensor placement)
+    if size(sp.x_acts, 2) == m.timesteps
+        GaussianProcesses.fit!(gpla_wf, sp_x_obs, sp_y_obs)
+        r = get_layout_profit(sp, gpla_wf, tlparams, wfparams)    /20000
+        if r > 1 || r < 1e-3 @warn "Reward surpasses 1.0 or is too small: r = $r. Change normalizing value. $(CMD_ARGS[:noise_seed])" end
 
-    if r > 1 || r < 1e-3 @warn "Reward surpasses 1.0 or is too small: r = $r. Change normalizing value. $(CMD_ARGS[:noise_seed])" end
+    else
+        r = 0.0
+    end
+
     return (sp = sp, o = o, r = r)
 end
 

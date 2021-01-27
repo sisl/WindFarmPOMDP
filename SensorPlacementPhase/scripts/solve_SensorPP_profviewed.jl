@@ -3,6 +3,7 @@
 """
 
 # using ProfileView
+@show VERSION
 include("../../SensorPlacementPhase/src/SensorPP.jl")
 include("../../TurbinePlacementPhase/src/TurbinePP.jl")
 

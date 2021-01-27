@@ -2,6 +2,7 @@
     Sensor Placement Phase
 """
 
+@show VERSION
 include("../../SensorPlacementPhase/src/SensorPP.jl")
 include("../../TurbinePlacementPhase/src/TurbinePP.jl")
 
