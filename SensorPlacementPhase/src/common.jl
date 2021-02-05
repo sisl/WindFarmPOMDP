@@ -50,7 +50,7 @@ function retrieve_solution_from_solver(solvermethod, tlparams, wfparams, pomdp, 
         end
         
         # Show utility of solution
-        @show RR = get_ground_truth_profit(states_history, tlparams, wfparams)
+        @show RR = get_ground_truth_profit(states_history, tlparams, wfparams)  # goes to L254 in common.jl
 
     else
         global soln = get_solution(s0, pomdp, tlparams, wfparams, solver)

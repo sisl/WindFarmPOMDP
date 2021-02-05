@@ -10,7 +10,7 @@
 end
 
 # Constructor
-GeneticPlanner(pomdp::WindFarmPOMDP, extra_params::AbstractArray) = GeneticPlanner(parse.(Float64, extra_params)...)
+GeneticPlanner(pomdp::WindFarmPOMDP, extra_params::Vector) = GeneticPlanner(parse.(Float64, extra_params)...)
 
 
 function get_solution(s0::WindFarmState, pomdp::WindFarmPOMDP, tlparams, wfparams, solver::GeneticPlanner, layouttype)

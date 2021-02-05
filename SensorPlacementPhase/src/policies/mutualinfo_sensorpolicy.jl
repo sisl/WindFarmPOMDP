@@ -20,11 +20,11 @@ mutable struct MutualInfoPolicy{RNG<:AbstractRNG, P<:Union{POMDP,MDP}, U<:Update
 end
 # The constructor below should be used to create the policy so that the action space is initialized correctly
 MutualInfoPolicy(problem::Union{POMDP,MDP}; rng=Random.GLOBAL_RNG, updater=POMDPPolicies.NothingUpdater()) = MutualInfoPolicy(rng, problem, updater)
-MutualInfoPolicy(problem::Union{POMDP,MDP}, extra_params::AbstractArray) = MutualInfoPolicy(problem)
+MutualInfoPolicy(problem::Union{POMDP,MDP}, extra_params::Vector) = MutualInfoPolicy(problem)
 
 
 
-function greedyMutualInfoPolicy(gpla_wf::GPLA, legal_actions::AbstractArray, pomdp::WindFarmPOMDP)
+function greedyMutualInfoPolicy(gpla_wf::GPLA, legal_actions::Vector{CartesianIndex{3}}, pomdp::WindFarmPOMDP)
     legal_actions = CartIndices_to_Array([item for item in legal_actions if item[3]==pomdp.altitudes[end]])
 
     # Part 1.

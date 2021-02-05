@@ -1,7 +1,7 @@
 # Modules
 using LinearAlgebra: norm
 using Parameters
-using Evolutionary
+# using Evolutionary
 using Polynomials
 
 # WindGP repo

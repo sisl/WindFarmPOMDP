@@ -26,7 +26,7 @@ function parse_commandline()
             default = "UCB"
 
         "--tree_queries", "-T"
-            help = "Number of tree queries, if the `solvermethod` uses tree branching."
+            help = "Number of tree queries, considered if the `solvermethod` uses tree branching."
             arg_type = Int
             default = 100
 
@@ -59,11 +59,11 @@ macro show_args(parsed_args)
     return :( show_args($parsed_args) )
 end
 
-replicate_args(;solvermethod = "pomcpow",
+replicate_args(;solvermethod = "greedy",
                 layoutfinder = "greedy", 
-                noise_seed = 123,
+                noise_seed = 1,
                 actpolicy = "UCB",
-                tree_queries = 10,
+                tree_queries = 2000,
                 savename = nothing) =  Dict(:solvermethod => Symbol(solvermethod),
                                             :layoutfinder => Symbol(layoutfinder),
                                             :noise_seed   => noise_seed,
@@ -75,7 +75,7 @@ replicate_args(;solvermethod = "pomcpow",
 """
     Functions for parsing solution results.
 """
-function show_results_as_dataframe(csv_filenames; normalizer_rewards = 1.0e6)
+function show_results_as_dataframe(csv_filenames; normalizer_rewards = 1.0)  # normalizer_rewards = 1.0e6
 
     if isempty(csv_filenames) return end
 

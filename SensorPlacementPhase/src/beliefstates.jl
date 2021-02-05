@@ -1,22 +1,22 @@
 struct WindFarmState
-    x_acts::AbstractArray   # actions taken so far.
-    x_obs::AbstractArray    # locations observed so far.
-    y_obs::AbstractArray    # values of locations observed so far.
-    x_obs_full::AbstractArray    # locations on entire map, if applicable. only for the actual states, not belief hallucinations during tree search.
-    y_obs_full::AbstractArray    # values of locations on entire map, if applicable. only for the actual states, not belief hallucinations during tree search.
+    x_acts::Matrix{Float64}        # actions taken so far.
+    x_obs::Matrix{Float64}         # locations observed so far.
+    y_obs::Vector{Float64}         # values of locations observed so far.
+    x_obs_full::Matrix{Float64}    # locations on entire map, if applicable. only for the actual states, not belief hallucinations during tree search.
+    y_obs_full::Vector{Float64}    # values of locations on entire map, if applicable. only for the actual states, not belief hallucinations during tree search.
 end
 
 struct WindFarmBelief
-    x_acts::AbstractArray
+    x_acts::Matrix{Float64}
     gpla_wf::GPLA
 end
 
 struct WindFarmBeliefUpdater <: POMDPs.Updater
-    altitudes::AbstractVector
+    altitudes::Vector{Number}
     grid_dist::Int
 end
 
-function POMDPs.update(bu::WindFarmBeliefUpdater, old_b::WindFarmBelief, a::CartesianIndex{3}, obs::AbstractVector)
+function POMDPs.update(bu::WindFarmBeliefUpdater, old_b::WindFarmBelief, a::CartesianIndex{3}, obs::Vector)
     a0 = CartIndices_to_Vector(a)
     a = expand_action_to_below_altitudes(a, bu.altitudes)
     a = CartIndices_to_Array(a)
@@ -52,8 +52,8 @@ end
 
     theta = [-1.5,                          # measurement noise, σy
              4.0,                           # mean, only used when kernel.mean is MeanConst.
-             6.152381297661223,             # ℓ2_sq
-             0.506877700348630293,          # σ2_sq
+             6.952381297661223,             # ℓ2_sq
+             0.586877700348630293,          # σ2_sq
              6.106476739802775,             # ℓ_lin
              0.506871639714265196,          # σ2_lin
              0.0,                           # d
@@ -130,6 +130,9 @@ function initialize_belief_no_prior(wfparams::WindFieldBeliefParams)
     gpla_wf = GPLA(X_obs, Y_obs, wfparams.num_neighbors, 0, 0, MeanConst(wfparams.theta[2]), kernel, wfparams.theta[1])
     GaussianProcesses.set_params!(gpla_wf, wfparams.theta)
 
+    # Customize constant mean value
+    gpla_wf.mean = MeanConst(10.0)
+
     x_acts = reshape(Float64[],3,0)
     return WindFarmBelief(x_acts, gpla_wf)
 end
@@ -175,7 +178,7 @@ function initialize_belief_lookup(wfparams::WindFieldBeliefParams; has_noise=tru
     end
     
     # Create the lookup mean to the GP
-    gpla_wf_mean = MeanLookup(X_mean, Y_mean)
+    gpla_wf_mean = MeanLookup(X_mean, Y_mean, CartIndices_to_Array(actions(pomdp)))
 
     # Create initial kernel
     kernel = WLK_SEIso(eps(), eps(), eps(), eps(), eps(), eps())
