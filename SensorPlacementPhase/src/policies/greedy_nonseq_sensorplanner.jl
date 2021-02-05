@@ -28,7 +28,8 @@ function get_solution(b0::WindFarmBelief, pomdp::WindFarmPOMDP, solver::GreedyNo
     
         
         this_val = argmaxall(vec(UCB); threshold = 1e-6)
-        this_action = legal_actions[:, rand(this_val)]        
+        this_action = legal_actions[:, rand(this_val)]
+
         best_actions = hcat(best_actions, this_action)
 
         b_last = WindFarmBelief(best_actions, b_last.gpla_wf)    # the belief over the wind field is the same, but the already selected locations are added to update the `legal_actions` inside the loop.

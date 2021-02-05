@@ -263,6 +263,9 @@ end
 function get_ground_truth_profit(states_history::AbstractArray, tlparams::TurbineLayoutParams, wfparams::WindFieldBeliefParams, layouttype::TurbineLayoutType)
 """ Calculate approximate profit of a turbine layout using ground truth, from the final state. Called after sequential solvers. """
 
+    # Re-seed ascertain the randomness among all scripts.
+    Random.seed!(wfparams.noise_seed)
+
     # Cost of sensor tower placements
     s_final = states_history[end]
     x_sensors = s_final.x_acts
@@ -285,6 +288,9 @@ end
 
 function get_ground_truth_profit(s0::WindFarmState, x_sensors::AbstractArray, tlparams::TurbineLayoutParams, wfparams::WindFieldBeliefParams, layouttype::TurbineLayoutType)
 """ Calculate approximate profit of a turbine layout using ground truth, from initial state and solution found. Called after non-sequential solvers. """
+
+    # Re-seed ascertain the randomness among all scripts.
+    Random.seed!(wfparams.noise_seed)
 
     # Cost of sensor tower placements
     cost_masts = get_tower_cost.(eachcol(x_sensors))
