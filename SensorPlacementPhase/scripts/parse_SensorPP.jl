@@ -9,8 +9,9 @@ csv_dir = isempty(Main.ARGS) ? "./Generic_Run_Results/" : ARGS[1]
 solvermethods = [:pomcpow,
                  :genetic,
                  :bayesian,
-                 :random,
                  :greedy,
+                 :greedynonseq,
+                 :random,
                  :entropy,
                  :mutualinfo,
                  :diffentro

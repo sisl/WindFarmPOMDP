@@ -17,4 +17,4 @@ function get_solution(pomdp::WindFarmPOMDP, solver::RandomPlanner)
     return x_sensors
 end
 
-get_solution(s0::WindFarmState, pomdp::WindFarmPOMDP, tlparams, wfparams, solver::RandomPlanner) = get_solution(pomdp, solver)
+get_solution(s0::WindFarmState, b0::WindFarmBelief, pomdp::WindFarmPOMDP, tlparams, wfparams, solver::RandomPlanner) = get_solution(pomdp, solver)

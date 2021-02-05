@@ -8,6 +8,7 @@ function extract_solver_method(pomdp, solvermethod, extra_params...)
         :mutualinfo     => MutualInfoPolicy,
         :diffentro      => DiffEntroPolicy,
         :greedy         => UCBGreedyPolicy,
+        :greedynonseq   => GreedyNonSeqPlanner,
         :random         => RandomPlanner,
         :bayesian       => BayesianPlanner,
         :genetic        => GeneticPlanner,
@@ -53,7 +54,7 @@ function retrieve_solution_from_solver(solvermethod, tlparams, wfparams, pomdp, 
         @show RR = get_ground_truth_profit(states_history, tlparams, wfparams)  # goes to L254 in common.jl
 
     else
-        global soln = get_solution(s0, pomdp, tlparams, wfparams, solver)
+        global soln = get_solution(s0, b0, pomdp, tlparams, wfparams, solver)
         @show RR = get_ground_truth_profit(s0, soln, tlparams, wfparams)
     end
 
