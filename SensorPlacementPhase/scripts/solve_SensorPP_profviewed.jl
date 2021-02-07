@@ -21,7 +21,8 @@ wfparams = WindFieldBeliefParams(noise_seed = CMD_ARGS[:noise_seed])
 tlparams = TurbineLayoutParams(CMD_ARGS[:layoutfinder])
 
 # Construct POMDP
-no_of_sensors = 5
+no_of_sensors = -1
+# no_of_sensors = 5
 delta = 220 * 4
 pomdp = WindFarmPOMDP(wfparams.nx, wfparams.ny, wfparams.grid_dist, wfparams.altitudes, no_of_sensors, delta)
 

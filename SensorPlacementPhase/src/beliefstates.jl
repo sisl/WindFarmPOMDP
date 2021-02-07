@@ -17,21 +17,26 @@ struct WindFarmBeliefUpdater <: POMDPs.Updater
 end
 
 function POMDPs.update(bu::WindFarmBeliefUpdater, old_b::WindFarmBelief, a::CartesianIndex{3}, obs::Vector)
-    a0 = CartIndices_to_Vector(a)
-    a = expand_action_to_below_altitudes(a, bu.altitudes)
-    a = CartIndices_to_Array(a)
+    if a == CartesianIndex(-1,-1,-1)
+        return old_b
 
-    x_acts = hcat(old_b.x_acts, a0)
+    else
+        a0 = CartIndices_to_Vector(a)
+        a = expand_action_to_below_altitudes(a, bu.altitudes)
+        a = CartIndices_to_Array(a)
 
-    gpla_wf = deepcopy(old_b.gpla_wf)
-    x_obs, y_obs = gpla_wf.x, gpla_wf.y
-    
-    x_obs = hcat(x_obs, a)
-    y_obs = vcat(y_obs, obs)
-    GaussianProcesses.fit!(gpla_wf, x_obs, y_obs)
+        x_acts = hcat(old_b.x_acts, a0)
 
-    # println("Belief Updated!")
-    return WindFarmBelief(x_acts, gpla_wf)
+        gpla_wf = deepcopy(old_b.gpla_wf)
+        x_obs, y_obs = gpla_wf.x, gpla_wf.y
+        
+        x_obs = hcat(x_obs, a)
+        y_obs = vcat(y_obs, obs)
+        GaussianProcesses.fit!(gpla_wf, x_obs, y_obs)
+
+        # println("Belief Updated!")
+        return WindFarmBelief(x_acts, gpla_wf)
+    end
 end
 
 @with_kw struct WindFieldBeliefParams

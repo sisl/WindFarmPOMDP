@@ -37,7 +37,7 @@ function retrieve_solution_from_solver(solvermethod, tlparams, wfparams, pomdp, 
         global actions_history = []
         global obs_history = []
         global rewards_history = []
-        for (s, a, r, o, b, t, sp, bp) in stepthrough(pomdp, solver, up, b0, s0, "s,a,r,o,b,t,sp,bp", max_steps=no_of_sensors)
+        for (s, a, r, o, b, t, sp, bp) in stepthrough(pomdp, solver, up, b0, s0, "s,a,r,o,b,t,sp,bp", max_steps = pomdp.timesteps==-1 ? 9999 : no_of_sensors)
             # @show s
             @show a
             @show o

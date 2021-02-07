@@ -64,22 +64,27 @@ struct MCTSRolloutUpdater <: POMDPs.Updater
 end
 
 function POMDPs.update(bu::MCTSRolloutUpdater, old_b::WindFarmBelief, a::CartesianIndex{3}, obs::Vector{Float64})
-    a0 = CartIndices_to_Vector(a)
-    a = expand_action_to_below_altitudes(a, bu.altitudes)
-    a = CartIndices_to_Array(a)
+    if a == CartesianIndex(-1,-1,-1)
+        return old_b
 
-    x_acts = hcat(old_b.x_acts, a0)
+    else
+        a0 = CartIndices_to_Vector(a)
+        a = expand_action_to_below_altitudes(a, bu.altitudes)
+        a = CartIndices_to_Array(a)
 
-    # gpla_wf = deepcopy(old_b.gpla_wf)
-    gpla_wf = old_b.gpla_wf
+        x_acts = hcat(old_b.x_acts, a0)
 
-    x_obs, y_obs = gpla_wf.x, gpla_wf.y
-    
-    x_obs = hcat(x_obs, a)
-    y_obs = vcat(y_obs, obs)
-    GaussianProcesses.fit!(gpla_wf, x_obs, y_obs)
+        # gpla_wf = deepcopy(old_b.gpla_wf)
+        gpla_wf = old_b.gpla_wf
 
-    return WindFarmBelief(x_acts, gpla_wf)
+        x_obs, y_obs = gpla_wf.x, gpla_wf.y
+        
+        x_obs = hcat(x_obs, a)
+        y_obs = vcat(y_obs, obs)
+        GaussianProcesses.fit!(gpla_wf, x_obs, y_obs)
+
+        return WindFarmBelief(x_acts, gpla_wf)
+    end
 end
 
 
@@ -113,6 +118,10 @@ UCBRolloutPolicy(problem::Union{POMDP,MDP}; rng=Random.GLOBAL_RNG, updater=MCTSR
 
     legal_actions = CartIndices_to_Array(legal_actions)
 
+    if size(legal_actions, 2) < top_n_to_consider
+        return reshape(Float64[], 3, 0), Float64[]
+    end
+
     μ, σ² = GaussianProcesses.predict_f(gpla_wf_rollout, legal_actions)
     σ = sqrt.(σ²)
     N = length(gpla_wf_rollout.y) + 1    # Laplace smoothing to prevent division by zero.
@@ -127,21 +136,20 @@ UCBRolloutPolicy(problem::Union{POMDP,MDP}; rng=Random.GLOBAL_RNG, updater=MCTSR
     return best_actions, weights
 end
 
-# function POMDPPolicies.action(policy::UCBRolloutPolicy, b::WindFarmBelief)
-#     gpla_wf_rollout = b.gpla_wf
-#     legal_actions = actions(policy.problem, b)
-#     best_actions, weights = get_UCB_rollout_actions(gpla_wf_rollout, legal_actions)
-#     policy_action = StatsBase.sample(collect(eachcol(best_actions)), Weights(weights))        # sample one candidate action w.r.t weights.
-#     return Vector_to_CartIndices(policy_action)
-# end
-
 function UCBWideningPolicy(pomdp::WindFarmPOMDP, b::WindFarmBelief, h::BeliefNode)
     gpla_wf_rollout = b.gpla_wf
     legal_actions = actions(pomdp, b)
     best_actions, weights = get_UCB_rollout_actions(gpla_wf_rollout, legal_actions)
+
+    if pomdp.timesteps == -1
+        terminating_action = [-1.0, -1.0, -1.0]
+        weight_of_terminating_action = sum(weights) * 0.1    # user-defined possibility of selecting the terminating action.
+        best_actions = hcat(best_actions, terminating_action)
+        weights = vcat(weights, weight_of_terminating_action)
+    end
+
     policy_action = StatsBase.sample(collect(eachcol(best_actions)), Weights(weights))        # sample one candidate action w.r.t weights.
     return Vector_to_CartIndices(policy_action)
-    # return Vector_to_CartIndices(best_actions[:,1])    # debug
 end
 
 POMDPs.updater(policy::UCBRolloutPolicy) = policy.updater
@@ -151,6 +159,7 @@ function UCBWideningPolicy(pomdp::WindFarmPOMDP, sf::POMCPOW.StateBelief, nd::PO
     legal_actions = actions(pomdp, sf.sr_belief.dist.items[end][1])
     return rand(legal_actions)
 end 
+
 
 """
     MIRolloutPolicy{RNG<:AbstractRNG, P<:Union{POMDP,MDP}, U<:Updater}
@@ -177,7 +186,7 @@ end
 MIRolloutPolicy(problem::Union{POMDP,MDP}; rng=Random.GLOBAL_RNG, updater=MCTSRolloutUpdater(problem.altitudes, problem.grid_dist)) = MIRolloutPolicy(rng, problem, updater)
 
 
-function get_MI_rollout_actions(gpla_wf_rollout::GPLA, legal_actions::Vector{CartesianIndex{3}}; top_n_to_consider::Int = 100)
+function get_MI_rollout_actions(gpla_wf_rollout::GPLA, legal_actions::Vector{CartesianIndex{3}}; top_n_to_consider::Int = 15)
 
     legal_actions = CartIndices_to_Array(legal_actions)
 
@@ -203,14 +212,6 @@ function get_MI_rollout_actions(gpla_wf_rollout::GPLA, legal_actions::Vector{Car
     weights = MutualInfos[best_vals]
     return best_actions, weights
 end
-
-# function POMDPPolicies.action(policy::MIRolloutPolicy, b::WindFarmBelief)
-#     gpla_wf_rollout = b.gpla_wf
-#     legal_actions = actions(policy.problem, b)
-#     best_actions, weights = get_MI_rollout_actions(gpla_wf_rollout, legal_actions)
-#     policy_action = StatsBase.sample(collect(eachcol(best_actions)), Weights(weights))        # sample one candidate action w.r.t weights.
-#     return Vector_to_CartIndices(policy_action)
-# end
 
 function MIWideningPolicy(pomdp::WindFarmPOMDP, b::WindFarmBelief, h::BeliefNode)
     gpla_wf_rollout = b.gpla_wf
