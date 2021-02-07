@@ -1,15 +1,15 @@
 """
-    GreedyNonSeqPlanner
+    GrdyNonSeqPlanner
     A non sequential planner that takes the greediest actions in a single step.
 """
 
-struct GreedyNonSeqPlanner end
+struct GrdyNonSeqPlanner end
 
 # Constructor
-GreedyNonSeqPlanner(pomdp::WindFarmPOMDP, extra_params::Vector) = GreedyNonSeqPlanner()
+GrdyNonSeqPlanner(pomdp::WindFarmPOMDP, extra_params::Vector) = GrdyNonSeqPlanner()
 
 
-function get_solution(b0::WindFarmBelief, pomdp::WindFarmPOMDP, solver::GreedyNonSeqPlanner)
+function get_solution(b0::WindFarmBelief, pomdp::WindFarmPOMDP, solver::GrdyNonSeqPlanner)
     no_of_sensors = pomdp.timesteps
     best_actions = reshape(Float64[], 3, 0)
 
@@ -39,4 +39,4 @@ function get_solution(b0::WindFarmBelief, pomdp::WindFarmPOMDP, solver::GreedyNo
     return best_actions
 end
 
-get_solution(s0::WindFarmState, b0::WindFarmBelief, pomdp::WindFarmPOMDP, tlparams, wfparams, solver::GreedyNonSeqPlanner) = get_solution(b0, pomdp, solver)
+get_solution(s0::WindFarmState, b0::WindFarmBelief, pomdp::WindFarmPOMDP, tlparams, wfparams, solver::GrdyNonSeqPlanner) = get_solution(b0, pomdp, solver)

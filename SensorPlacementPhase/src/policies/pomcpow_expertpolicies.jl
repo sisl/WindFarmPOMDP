@@ -40,7 +40,7 @@ function greedyUCBExpert(gpla_wf::GPLA, legal_actions::Vector{CartesianIndex{3}}
     best_vals = argmaxall(vec(UCB); threshold = 1e-6)
     best_action = legal_actions[:,rand(best_vals)]
 
-    return @show best_action
+    return best_action
 end
 
 function POMDPPolicies.action(policy::UCBGreedyPolicy, b::WindFarmBelief)

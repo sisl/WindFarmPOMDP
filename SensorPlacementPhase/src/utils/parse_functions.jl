@@ -7,7 +7,7 @@ function parse_commandline()
     @add_arg_table! s begin
         "--solvermethod", "-S"
             help = "Solver method for sensor placements."
-            range_tester = (x -> x ∈ ["pomcpow", "greedy", "greedynonseq", "random", "entropy", "mutualinfo", "diffentro"])
+            range_tester = (x -> x ∈ ["pomcpow", "greedy", "grdynonseq", "random", "entropy", "mutualinfo", "diffentro"])
             required = true
 
         "--layoutfinder", "-L"
@@ -59,7 +59,7 @@ macro show_args(parsed_args)
     return :( show_args($parsed_args) )
 end
 
-replicate_args(;solvermethod = "greedynonseq",
+replicate_args(;solvermethod = "grdynonseq",
                 layoutfinder = "greedy", 
                 noise_seed = 1,
                 actpolicy = "UCB",

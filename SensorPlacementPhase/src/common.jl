@@ -8,7 +8,7 @@ function extract_solver_method(pomdp, solvermethod, extra_params...)
         :mutualinfo     => MutualInfoPolicy,
         :diffentro      => DiffEntroPolicy,
         :greedy         => UCBGreedyPolicy,
-        :greedynonseq   => GreedyNonSeqPlanner,
+        :grdynonseq     => GrdyNonSeqPlanner,
         :random         => RandomPlanner,
         :bayesian       => BayesianPlanner,
         :genetic        => GeneticPlanner,
