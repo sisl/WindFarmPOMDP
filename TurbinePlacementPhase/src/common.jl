@@ -26,7 +26,7 @@ abstract type TurbineLayoutType end
     turbine_power_curve::Polynomial = create_power_curve()      # [kW, given windspeed]
 end
 
-function create_power_curve(poly_degree::Int = 3, data_dir = "../../TurbinePlacementPhase/data/ge_turbine_data.csv")
+function create_power_curve(poly_degree::Int = 3, data_dir = "../../TurbinePlacementPhase/data/ge_turbine_power_curve.csv")
     power_data = DelimitedFiles.readdlm(data_dir, Float64, comments=true, comment_char='#')
     speed_ms, power_kW = eachcol(power_data)
     curve_fit = Polynomials.fit(speed_ms, power_kW, poly_degree)
@@ -263,7 +263,7 @@ end
 function get_ground_truth_profit(states_history::AbstractArray, tlparams::TurbineLayoutParams, wfparams::WindFieldBeliefParams, layouttype::TurbineLayoutType)
 """ Calculate approximate profit of a turbine layout using ground truth, from the final state. Called after sequential solvers. """
 
-    # Re-seed ascertain the randomness among all scripts.
+    # Re-seed to ascertain the same randomness among all scripts.
     Random.seed!(wfparams.noise_seed)
 
     # Cost of sensor tower placements
@@ -289,7 +289,7 @@ end
 function get_ground_truth_profit(s0::WindFarmState, x_sensors::AbstractArray, tlparams::TurbineLayoutParams, wfparams::WindFieldBeliefParams, layouttype::TurbineLayoutType)
 """ Calculate approximate profit of a turbine layout using ground truth, from initial state and solution found. Called after non-sequential solvers. """
 
-    # Re-seed ascertain the randomness among all scripts.
+    # Re-seed to ascertain the same randomness among all scripts.
     Random.seed!(wfparams.noise_seed)
 
     # Cost of sensor tower placements

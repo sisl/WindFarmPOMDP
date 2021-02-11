@@ -1,0 +1,20 @@
+# Wind Speed [m/s] vs Cp curve for GE 2.5-120 turbine.
+# Source: https://en.wind-turbine-models.com/turbines/310-ge-general-electric-ge-2.5-120
+
+3           0.130
+3.5         0.300
+4           0.390
+4.5         0.430
+5           0.450
+5.5         0.460
+6           0.470
+6.5         0.480
+7           0.480
+7.5         0.480
+8           0.470
+8.5         0.460
+9           0.430
+9.5         0.390
+10          0.350
+10.5        0.310
+11          0.270
