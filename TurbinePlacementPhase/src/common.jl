@@ -234,7 +234,7 @@ function get_layout_profit(sp::WindFarmState, gpla_wf::GPLA, tlparams::TurbineLa
 """ Calculate approximate profit of a turbine layout. """
     # Cost of sensor tower placements
     x_sensors = sp.x_acts
-    cost_masts = get_tower_cost.(eachcol(x_sensors))
+    cost_masts = isempty(x_sensors) ? 0.0 : get_tower_cost.(eachcol(x_sensors))
 
     # Profit of turbine placements
     x_turbines, _ = get_turbine_layout(gpla_wf, tlparams, wfparams, layouttype)
@@ -279,7 +279,7 @@ function get_ground_truth_profit(states_history::AbstractArray, tlparams::Turbin
     # Cost of sensor tower placements
     s_final = states_history[end]
     x_sensors = s_final.x_acts
-    cost_masts = get_tower_cost.(eachcol(x_sensors))
+    cost_masts = isempty(x_sensors) ? 0.0 : get_tower_cost.(eachcol(x_sensors))
 
     # Get belief and ground truth
     x_obs_full = s_final.x_obs_full
@@ -303,7 +303,7 @@ function get_ground_truth_profit(s0::WindFarmState, x_sensors::AbstractArray, tl
     Random.seed!(wfparams.noise_seed)
 
     # Cost of sensor tower placements
-    cost_masts = get_tower_cost.(eachcol(x_sensors))
+    cost_masts = isempty(x_sensors) ? 0.0 : get_tower_cost.(eachcol(x_sensors))
     
     # Get ground truth
     x_obs_full = s0.x_obs_full
