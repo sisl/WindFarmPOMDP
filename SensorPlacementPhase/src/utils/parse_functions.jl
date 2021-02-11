@@ -10,6 +10,11 @@ function parse_commandline()
             range_tester = (x -> x ∈ ["pomcpow", "greedy", "grdynonseq", "random", "entropy", "mutualinfo", "diffentro"])
             required = true
 
+        "--sensors", "-N"
+            help = "Number of sensors to be placed in total. Type -1 for indeterminate case."
+            arg_type = Int
+            default = 5
+
         "--layoutfinder", "-L"
             help = "Layout type for heuristically determining a turbine layout."
             range_tester = (x -> x ∈ ["greedy", "genetic", "mcmc"])
@@ -30,8 +35,8 @@ function parse_commandline()
             arg_type = Int
             default = 100
 
-        "--savename", "-N"
-            help = "Save name for results. Any valid String accepted. Pass no arguments to skip saving."
+        "--savename", "-F"
+            help = "Save name of file for results. Any valid String accepted. Pass no arguments to skip saving."
             arg_type = String
             default = nothing
     end
@@ -59,12 +64,14 @@ macro show_args(parsed_args)
     return :( show_args($parsed_args) )
 end
 
-replicate_args(;solvermethod = "pomcpow",
+replicate_args(;solvermethod = "grdynonseq",
+                sensors = 5,
                 layoutfinder = "greedy", 
                 noise_seed = 1,
                 actpolicy = "UCB",
                 tree_queries = 20,
                 savename = nothing) =  Dict(:solvermethod => Symbol(solvermethod),
+                                            :sensors      => sensors,
                                             :layoutfinder => Symbol(layoutfinder),
                                             :noise_seed   => noise_seed,
                                             :actpolicy    => actpolicy,

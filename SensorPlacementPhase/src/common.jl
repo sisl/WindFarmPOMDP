@@ -51,6 +51,7 @@ function retrieve_solution_from_solver(solvermethod, tlparams, wfparams, pomdp, 
         end
         
         # Show utility of solution
+        soln = states_history[end].x_acts
         @show RR = get_ground_truth_profit(states_history, tlparams, wfparams)  # goes to L254 in common.jl
 
     else
@@ -58,5 +59,5 @@ function retrieve_solution_from_solver(solvermethod, tlparams, wfparams, pomdp, 
         @show RR = get_ground_truth_profit(s0, soln, tlparams, wfparams)
     end
 
-    return RR
+    return RR, soln
 end

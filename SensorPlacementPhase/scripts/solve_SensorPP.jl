@@ -20,7 +20,7 @@ wfparams = WindFieldBeliefParams(noise_seed = CMD_ARGS[:noise_seed])
 tlparams = TurbineLayoutParams(CMD_ARGS[:layoutfinder])
 
 # Construct POMDP
-no_of_sensors = 5
+no_of_sensors = CMD_ARGS[:sensors]
 delta = 220 * 4
 pomdp = WindFarmPOMDP(wfparams, no_of_sensors, delta)
 
@@ -35,10 +35,10 @@ up = WindFarmBeliefUpdater(wfparams.altitudes, wfparams.grid_dist)
 solver = extract_solver_method(pomdp, CMD_ARGS[:solvermethod], CMD_ARGS[:actpolicy], CMD_ARGS[:tree_queries])
 
 # Retrieve Solution
-RR = retrieve_solution_from_solver(CMD_ARGS[:solvermethod], tlparams, wfparams, pomdp, solver, up, b0, s0, no_of_sensors)
+RR, soln = retrieve_solution_from_solver(CMD_ARGS[:solvermethod], tlparams, wfparams, pomdp, solver, up, b0, s0, no_of_sensors)
 end    # time_taken
 
 
 # Save results
 @show round(time_taken; digits=3)
-writedlm_append(CMD_ARGS[:savename], hcat(CMD_ARGS[:solvermethod], CMD_ARGS[:layoutfinder], CMD_ARGS[:actpolicy], CMD_ARGS[:tree_queries], round(time_taken; digits=2), RR))
+writedlm_append(CMD_ARGS[:savename], hcat(CMD_ARGS[:solvermethod], CMD_ARGS[:layoutfinder], CMD_ARGS[:actpolicy], CMD_ARGS[:tree_queries], CMD_ARGS[:sensors], size(soln, 2), round(time_taken; digits=2), RR))
