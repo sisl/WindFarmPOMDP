@@ -69,7 +69,7 @@ function POMDPs.gen(m::WindFarmPOMDP, s::WindFarmState, a0::CartesianIndex{3}, r
         sp = WindFarmState(sp_x_acts, s.x_obs, s.y_obs, s.x_obs_full, s.y_obs_full)
         o = [0.0]
 
-        r = get_layout_profit(s, gpla_wf, tlparams, wfparams)    /20000
+        r = get_layout_profit(s, gpla_wf, tlparams, wfparams)    /70.0e6
         if r > 1 || r < 1e-3 @warn "Reward surpasses 1.0 or is too small: r = $r. Change normalizing value. $(CMD_ARGS[:noise_seed])" end
         
     
@@ -95,7 +95,7 @@ function POMDPs.gen(m::WindFarmPOMDP, s::WindFarmState, a0::CartesianIndex{3}, r
         # Get reward (only in last sensor placement)
         if size(sp.x_acts, 2) == m.timesteps
             GaussianProcesses.fit!(gpla_wf, sp_x_obs, sp_y_obs)
-            r = get_layout_profit(sp, gpla_wf, tlparams, wfparams)    /20000
+            r = get_layout_profit(sp, gpla_wf, tlparams, wfparams)    /70.0e6
             if r > 1 || r < 1e-3 @warn "Reward surpasses 1.0 or is too small: r = $r. Change normalizing value. $(CMD_ARGS[:noise_seed])" end
 
         else

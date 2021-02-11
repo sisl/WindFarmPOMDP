@@ -24,9 +24,19 @@ abstract type TurbineLayoutType end
     turbine_cut_in_speed::Float64 = 3.0                         # [m/s]
     turbine_rated_speed::Float64 = 11.0                         # [m/s]
     turbine_power_curve::Polynomial = create_power_curve()      # [kW, given windspeed]
+    # turbine_power_curve::Polynomial = create_Cp_curve()      # [unitless]
 end
 
 function create_power_curve(poly_degree::Int = 3, data_dir = "../../TurbinePlacementPhase/data/ge_turbine_power_curve.csv")
+    power_data = DelimitedFiles.readdlm(data_dir, Float64, comments=true, comment_char='#')
+    speed_ms, power_kW = eachcol(power_data)
+    curve_fit = Polynomials.fit(speed_ms, power_kW, poly_degree)
+    return curve_fit
+    # scatter(speed_ms, power_kW, label="Data")
+    # plot!(curve_fit, extrema(speed_ms)..., label="Fit")
+end
+
+function create_Cp_curve(poly_degree::Int = 3, data_dir = "../../TurbinePlacementPhase/data/ge_turbine_coefficient_curve.csv")
     power_data = DelimitedFiles.readdlm(data_dir, Float64, comments=true, comment_char='#')
     speed_ms, power_kW = eachcol(power_data)
     curve_fit = Polynomials.fit(speed_ms, power_kW, poly_degree)
@@ -214,7 +224,7 @@ function turbine_approximate_profits(x_turbines::AbstractMatrix, gpla_wf, tlpara
     
     costs = get_turbine_cost.(eachcol(x_turbines))
     s_avg = get_average_turbine_distances(x_turbines) / tlparams.turbine_diameter
-    profits = get_turbine_profit.(μ, σ, costs, Ref(s_avg), Ref(N_samples), Ref(tlparams))
+    profits = get_turbine_revenue.(μ, σ, costs, Ref(s_avg), Ref(N_samples), Ref(tlparams))
 
     result = sum(profits) - penalty_cost * sum(is_solution_separated_Int(x_turbines, tlparams))    # Penalty added for solutions within seperated regions.
     return Int(round(result))
@@ -230,9 +240,9 @@ function get_layout_profit(sp::WindFarmState, gpla_wf::GPLA, tlparams::TurbineLa
     x_turbines, _ = get_turbine_layout(gpla_wf, tlparams, wfparams, layouttype)
     expected_turbine_profits = turbine_approximate_profits(x_turbines, gpla_wf, tlparams)
 
-    # total_profit = sum(expected_turbine_profits) - sum(cost_masts)
-    # return total_profit
-    return sum(expected_turbine_profits)
+    total_profit = sum(expected_turbine_profits) - sum(cost_masts)
+    return total_profit
+    # return sum(expected_turbine_profits)
 end
 
 turbine_approximate_profits(locs::AbstractVector, X_field, gpla_wf, tlparams) = turbine_approximate_profits(X_field[:, locs], gpla_wf, tlparams)
@@ -254,7 +264,7 @@ function turbine_ground_profits(x_turbines::AbstractMatrix, x_obs_full, y_obs_fu
     
     costs = get_turbine_cost.(eachcol(x_turbines))
     s_avg = get_average_turbine_distances(x_turbines) / tlparams.turbine_diameter
-    profits = get_turbine_profit.(ui_vals, σi_vals, costs, Ref(s_avg), Ref(N_samples), Ref(tlparams))   #L305.
+    profits = get_turbine_revenue.(ui_vals, σi_vals, costs, Ref(s_avg), Ref(N_samples), Ref(tlparams))
 
     result = sum(profits) - penalty_cost * sum(is_solution_separated_Int(x_turbines, tlparams))    # Penalty added for solutions within seperated regions.
     return Int(round(result))
@@ -281,9 +291,9 @@ function get_ground_truth_profit(states_history::AbstractArray, tlparams::Turbin
     x_turbines, _ = get_turbine_layout(gpla_wf, tlparams, wfparams, layouttype)
     expected_turbine_profits = turbine_ground_profits(x_turbines, x_obs_full, y_obs_full, gpla_wf, tlparams)  #L237.
 
-    # total_profit = sum(expected_turbine_profits) - sum(cost_masts)
-    # return total_profit
-    return sum(expected_turbine_profits)
+    total_profit = sum(expected_turbine_profits) - sum(cost_masts)
+    return total_profit
+    # return sum(expected_turbine_profits)
 end
 
 function get_ground_truth_profit(s0::WindFarmState, x_sensors::AbstractArray, tlparams::TurbineLayoutParams, wfparams::WindFieldBeliefParams, layouttype::TurbineLayoutType)
@@ -301,7 +311,8 @@ function get_ground_truth_profit(s0::WindFarmState, x_sensors::AbstractArray, tl
     gpla_wf_full = get_GPLA_for_gen(x_obs_full, y_obs_full, wfparams)       # Ground truth.
 
     # Get latest belief
-    x_obs = x_sensors
+    x_obs = vcat([expand_action_to_below_altitudes(item, wfparams.altitudes) for item in Array_to_CartIndices(x_sensors)]...)
+    x_obs = CartIndices_to_Array(x_obs)
     y_obs = rand(gpla_wf_full, x_obs)
     gpla_wf = get_GPLA_for_gen(x_obs, y_obs, wfparams)                      # Latest belief based on previous observations.
 
@@ -309,16 +320,22 @@ function get_ground_truth_profit(s0::WindFarmState, x_sensors::AbstractArray, tl
     x_turbines, _ = get_turbine_layout(gpla_wf, tlparams, wfparams, layouttype)
     expected_turbine_profits = turbine_ground_profits(x_turbines, x_obs_full, y_obs_full, gpla_wf, tlparams)
 
-    # total_profit = sum(expected_turbine_profits) - sum(cost_masts)
-    # return total_profit
-    return sum(expected_turbine_profits)
+    total_profit = sum(expected_turbine_profits) - sum(cost_masts)
+    return total_profit
+    # return sum(expected_turbine_profits)
 end
 
 get_ground_truth_profit(states_history::AbstractArray, tlparams::TurbineLayoutParams, wfparams::WindFieldBeliefParams) = get_ground_truth_profit(states_history, tlparams, wfparams, tlparams.layouttype)
 get_ground_truth_profit(s0::WindFarmState, x_sensors::AbstractArray, tlparams::TurbineLayoutParams, wfparams::WindFieldBeliefParams) = get_ground_truth_profit(s0, x_sensors, tlparams, wfparams, tlparams.layouttype)
 
-function get_turbine_profit(ui, σi, turbine_cost, s_avg, N_samples, tlparams)
-""" Follows the heuristic as described in Stevens et al. """
+function get_turbine_power_output(ui, tlparams)
+""" Keeps the power output within reasonable limits. """
+    ui_clamped = clamp(ui, tlparams.turbine_cut_in_speed, tlparams.turbine_rated_speed)
+    return tlparams.turbine_power_curve(ui_clamped)
+end
+
+function get_turbine_revenue_v0(ui, σi, turbine_cost, s_avg, N_samples, tlparams)
+""" Old version. Follows the heuristic as described in Stevens et al. """
     # θ = 1.0e-3
     # β = 5.0e-3
     # γ = 4
@@ -338,8 +355,22 @@ function get_turbine_profit(ui, σi, turbine_cost, s_avg, N_samples, tlparams)
     return LCB^3
 end
 
-function get_turbine_power_output(ui, tlparams)
-""" Keeps the power output within reasonable limits. """
-    ui_clamped = clamp(ui, tlparams.turbine_cut_in_speed, tlparams.turbine_rated_speed)
-    return tlparams.turbine_power_curve(ui_clamped)
+function get_turbine_revenue(ui, σi, turbine_cost, s_avg, N_samples, tlparams)
+""" Returns the revenue of a single turbine. """
+    z_value = 1.645    # chosen: 90 percent confidence interval
+    LCB = ui - z_value / sqrt(N_samples) * σi
+    
+    # rho = 0.8338    # air density [kg/m^3]
+    # Area = pi * tlparams.turbine_diameter^2    # [m^2]
+    # Cp = get_turbine_power_output(LCB, tlparams)
+
+    power_created = get_turbine_power_output(LCB, tlparams) # [kW]
+    power_created = power_created / 1.0e3                   # [MW]
+
+    cost_of_energy = 15                 # [USD/MWh]
+    turbine_lifetime = 30               # [years]
+    hours_in_one_year = 24 * 365        # [hours]
+
+    revenue_of_turbine = cost_of_energy * (turbine_lifetime * hours_in_one_year) * power_created   # [USD]
+    return revenue_of_turbine
 end

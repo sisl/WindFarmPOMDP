@@ -43,7 +43,7 @@ end
     # Parsing Farm Data
     farm = "AltamontCA"
     grid_dist = 220
-    altitudes = [100, 150, 200]
+    altitudes::Vector{Number} = [100, 150, 200]
     nx = 20
     ny = 20
     scale_factor = 20
