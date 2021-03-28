@@ -167,7 +167,7 @@ function plot_WindFarmPOMDP_TPP_history(wfparams::WindFieldBeliefParams, actions
         Plots.scatter!(a_in_t[2,:], a_in_t[1,:], legend=false, color=sensor_color)                         # Notice that the row and col of `a_in_t` is reversed.
         Plots.savefig(p3, "./$dir/PlotMean_t$(t)_h$(h).$savetype")
 
-        p4 = Plots.heatmap(reshape(LCB_vec, (nx,ny)), clim=HEATMAP_μ_CLIM, title="Mean LCB of Belief at t=$(t), h = $(h)m")
+        p4 = Plots.heatmap(reshape(LCB_vec, (nx,ny)), clim=HEATMAP_μ_CLIM, title="90% LCB of Belief at t=$(t), h = $(h)m")
         Plots.scatter!(x_turbines[2,:], x_turbines[1,:], m=:square, legend=false, color=turbine_color)     # Notice that the row and col of `a_in_t` is reversed.
         Plots.scatter!(a_in_t[2,:], a_in_t[1,:], legend=false, color=sensor_color)                         # Notice that the row and col of `a_in_t` is reversed.
         Plots.savefig(p4, "./$dir/PlotLCB_t$(t)_h$(h).$savetype")
@@ -242,7 +242,7 @@ function plot_WindFarmPOMDP_TPP_history(wfparams::WindFieldBeliefParams, soln::A
         Plots.scatter!(a_in_t[2,:], a_in_t[1,:], legend=false, color=sensor_color)                         # Notice that the row and col of `a_in_t` is reversed.
         Plots.savefig(p3, "./$dir/PlotMean_t$(t)_h$(h).$savetype")
 
-        p4 = Plots.heatmap(reshape(LCB_vec, (nx,ny)), clim=HEATMAP_μ_CLIM, title="Mean LCB of Belief at t=$(t), h = $(h)m")
+        p4 = Plots.heatmap(reshape(LCB_vec, (nx,ny)), clim=HEATMAP_μ_CLIM, title="90% LCB of Belief at t=$(t), h = $(h)m")
         Plots.scatter!(x_turbines[2,:], x_turbines[1,:], m=:square, legend=false, color=turbine_color)     # Notice that the row and col of `a_in_t` is reversed.
         Plots.scatter!(a_in_t[2,:], a_in_t[1,:], legend=false, color=sensor_color)                         # Notice that the row and col of `a_in_t` is reversed.
         Plots.savefig(p4, "./$dir/PlotLCB_t$(t)_h$(h).$savetype")

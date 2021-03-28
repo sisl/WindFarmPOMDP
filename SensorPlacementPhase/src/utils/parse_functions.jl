@@ -11,7 +11,7 @@ function parse_commandline()
             required = true
 
         "--sensors", "-N"
-            help = "Number of sensors to be placed in total. Type -1 for indeterminate case."
+            help = "Number of sensors to be placed in total. Enter -1 for indeterminate case."
             arg_type = Int
             default = 5
 
@@ -64,12 +64,12 @@ macro show_args(parsed_args)
     return :( show_args($parsed_args) )
 end
 
-replicate_args(;solvermethod = "grdynonseq",
+replicate_args(;solvermethod = "mutualinfo",
                 sensors = 5,
                 layoutfinder = "greedy", 
                 noise_seed = 1,
                 actpolicy = "UCB",
-                tree_queries = 20,
+                tree_queries = 2000,
                 savename = nothing) =  Dict(:solvermethod => Symbol(solvermethod),
                                             :sensors      => sensors,
                                             :layoutfinder => Symbol(layoutfinder),
