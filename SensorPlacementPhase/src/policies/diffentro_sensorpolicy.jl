@@ -10,7 +10,7 @@ Constructor:
 # Fields 
 - `rng::RNG` a random number generator 
 - `probelm::P` the POMDP or MDP problem 
-- `updater::U` a belief updater (default to `POMDPPolicies.NothingUpdater` in the above constructor)
+- `updater::U` a belief updater (defaults to `POMDPPolicies.NothingUpdater` in the above constructor)
 """
 
 mutable struct DiffEntroPolicy{RNG<:AbstractRNG, P<:Union{POMDP,MDP}, U<:Updater} <: Policy
@@ -25,10 +25,10 @@ DiffEntroPolicy(problem::Union{POMDP,MDP}, extra_params::Vector) = DiffEntroPoli
 
 function greedyDiffEntroPolicy(gpla_wf::GPLA, legal_actions::Vector{CartesianIndex{3}}, pomdp::WindFarmPOMDP)
     legal_actions = CartIndices_to_Array([item for item in legal_actions if item[3]==pomdp.altitudes[end]])
-    
-    conditional_entropy(σ²) = 0.5 * log(2 * pi * exp(1) * σ²)
+    best_vals = []
 
     ### After taking the new action ###
+    conditional_entropy(σ²) = 0.5 * log(2 * pi * exp(1) * σ²)
 
     function conditional_entropy_of_complement_action1(gpla_wf, pomdp, a)
         
@@ -40,23 +40,35 @@ function greedyDiffEntroPolicy(gpla_wf::GPLA, legal_actions::Vector{CartesianInd
 
         all_actions = CartIndices_to_Array(POMDPs.actions(pomdp))
         μ, σ² = GaussianProcesses.predict_f(gpla_temp, all_actions)
+        replace!(σ², 0 => 1.0e-6)      # prevents -Inf in the line below.
         return sum(conditional_entropy.(σ²))
     end
 
+    if isempty(gpla_wf.x)    # first placement will definitely be at the centroid, causes to skip the search
+        best_vals = collect(1:size(legal_actions, 2))
+    else
+        not_passed_flag = true
+        while not_passed_flag
+            try    # retry if any thread fails
+                parallel_results = []
+                Threads.@threads for idx in 1:size(legal_actions, 2)
+                    a = legal_actions[:,idx]
+                    entro = conditional_entropy_of_complement_action1(gpla_wf, pomdp, a)
+                    @show (idx,entro)
+                    push!(parallel_results, (idx,entro))
+                end
+        
+                conditional_entropy_of_complement_actions = [item[2] for item in sort(parallel_results)]    
+        
+                diffentros =  - conditional_entropy_of_complement_actions
+                best_vals = argmaxall(diffentros; threshold = 0.0)
 
-    parallel_results = []
-
-    Threads.@threads for idx in 1:size(legal_actions, 2)
-        a = legal_actions[:,idx]
-        entro = conditional_entropy_of_complement_action1(gpla_wf, pomdp, a)
-        @show (idx,entro)
-        push!(parallel_results, (idx,entro))
+                not_passed_flag = false
+            catch
+                nothing
+            end
+        end
     end
-
-    conditional_entropy_of_complement_actions = [item[2] for item in sort(parallel_results)]    
-
-    diffentros =  - conditional_entropy_of_complement_actions
-    best_vals = argmaxall(diffentros; threshold = 0.0)
 
     # if more than one best action, choose the one closest to the centroid of legal actions.
     if length(best_vals) == 1

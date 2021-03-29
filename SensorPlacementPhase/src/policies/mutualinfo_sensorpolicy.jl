@@ -10,7 +10,7 @@ Constructor:
 # Fields 
 - `rng::RNG` a random number generator 
 - `probelm::P` the POMDP or MDP problem 
-- `updater::U` a belief updater (default to `POMDPPolicies.NothingUpdater` in the above constructor)
+- `updater::U` a belief updater (defaults to `POMDPPolicies.NothingUpdater` in the above constructor)
 """
 
 mutable struct MutualInfoPolicy{RNG<:AbstractRNG, P<:Union{POMDP,MDP}, U<:Updater} <: Policy
@@ -26,24 +26,40 @@ MutualInfoPolicy(problem::Union{POMDP,MDP}, extra_params::Vector) = MutualInfoPo
 
 function greedyMutualInfoPolicy(gpla_wf::GPLA, legal_actions::Vector{CartesianIndex{3}}, pomdp::WindFarmPOMDP)
     legal_actions = CartIndices_to_Array([item for item in legal_actions if item[3]==pomdp.altitudes[end]])
+    best_vals = []
 
-    # Part 1.
-    conditional_entropy_of_actions = conditional_entropy_of_action1.(Ref(gpla_wf), eachcol(legal_actions))
+    if isempty(gpla_wf.x)    # first placement will definitely be at the centroid, causes to skip the search
+        best_vals = collect(1:size(legal_actions, 2))
+    else
 
-    # Part 2.
-    results = []
-    Threads.@threads for idx in 1:size(legal_actions, 2)
-        a = legal_actions[:,idx]
-        entro = conditional_entropy_of_complement_action1(gpla_wf, pomdp, a)
-        @show (idx,entro)
-        push!(results, (idx,entro))
+        # Part 1.
+        conditional_entropy_of_actions = conditional_entropy_of_action1.(Ref(gpla_wf), eachcol(legal_actions))
+
+        # Part 2.
+        not_passed_flag = true
+        while not_passed_flag
+            try    # retry if any thread fails
+                results = []
+                Threads.@threads for idx in 1:size(legal_actions, 2)
+                    a = legal_actions[:,idx]
+                    entro = conditional_entropy_of_complement_action1(gpla_wf, pomdp, a)
+                    @show (idx,entro)
+                    push!(results, (idx,entro))
+                end
+                
+                # Combining Part 1 and 2.
+                conditional_entropy_of_complement_actions = [item[2] for item in sort(results)]
+                
+                MutualInfos = conditional_entropy_of_actions - conditional_entropy_of_complement_actions
+                best_vals = argmaxall(MutualInfos; threshold = 0.0)
+                
+                not_passed_flag = false
+            catch
+                nothing
+            end
+        end
+
     end
-
-    # Combining Part 1 and 2.
-    conditional_entropy_of_complement_actions = [item[2] for item in sort(results)]
-    
-    MutualInfos = conditional_entropy_of_actions - conditional_entropy_of_complement_actions
-    best_vals = argmaxall(MutualInfos; threshold = 0.0)
 
     # If more than one best action, choose the one closest to the centroid of legal actions.
     if length(best_vals) == 1

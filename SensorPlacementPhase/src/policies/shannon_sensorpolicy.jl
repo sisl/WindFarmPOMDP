@@ -10,7 +10,7 @@ Constructor:
 # Fields 
 - `rng::RNG` a random number generator 
 - `probelm::P` the POMDP or MDP problem 
-- `updater::U` a belief updater (default to `POMDPPolicies.NothingUpdater` in the above constructor)
+- `updater::U` a belief updater (defaults to `POMDPPolicies.NothingUpdater` in the above constructor)
 """
 
 mutable struct ShannonEntropyPolicy{RNG<:AbstractRNG, P<:Union{POMDP,MDP}, U<:Updater} <: Policy
@@ -35,9 +35,12 @@ function greedyShannonPolicy(gpla_wf::GPLA, legal_actions::Vector{CartesianIndex
         return conditional_entropy(σ²)
     end
     
-
-    shannon_entropies = conditional_entropy_of_action1.(Ref(gpla_wf), eachcol(legal_actions))
-    best_vals = argmaxall(shannon_entropies; threshold = 0.0)
+    if isempty(gpla_wf.x)    # first placement will definitely be at the centroid, causes to skip the search
+        best_vals = collect(1:size(legal_actions, 2))
+    else
+        shannon_entropies = conditional_entropy_of_action1.(Ref(gpla_wf), eachcol(legal_actions))
+        best_vals = argmaxall(shannon_entropies; threshold = 0.0)
+    end
 
     # if more than one best action, choose the one closest to the centroid of legal actions.
     if length(best_vals) == 1
