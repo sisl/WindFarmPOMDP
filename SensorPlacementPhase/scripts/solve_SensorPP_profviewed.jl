@@ -15,7 +15,7 @@ CMD_ARGS = parse_commandline()
 # time_taken = @elapsed begin
 
 # Wind Field Belief Parameters
-wfparams = WindFieldBeliefParams(noise_seed = CMD_ARGS[:noise_seed])
+wfparams = WindFieldBeliefParams(farm=CMD_ARGS[:farm], noise_seed=CMD_ARGS[:noise_seed])
 
 # Turbine Layout Heuristic Parameters
 tlparams = TurbineLayoutParams(CMD_ARGS[:layoutfinder])

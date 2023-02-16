@@ -223,8 +223,8 @@ function turbine_approximate_profits(x_turbines::AbstractMatrix, gpla_wf, tlpara
     N_samples = max(1, length(gpla_wf.y))
     
     costs = get_turbine_cost.(eachcol(x_turbines))
-    s_avg = get_average_turbine_distances(x_turbines) / tlparams.turbine_diameter
-    profits = get_turbine_revenue.(μ, σ, costs, Ref(s_avg), Ref(N_samples), Ref(tlparams))
+    # s_avg = get_average_turbine_distances(x_turbines) / tlparams.turbine_diameter
+    profits = get_turbine_revenue.(μ, σ, Ref(N_samples), Ref(tlparams)) .- costs
 
     result = sum(profits) - penalty_cost * sum(is_solution_separated_Int(x_turbines, tlparams))    # Penalty added for solutions within seperated regions.
     return Int(round(result))
@@ -263,8 +263,8 @@ function turbine_ground_profits(x_turbines::AbstractMatrix, x_obs_full, y_obs_fu
     N_samples = max(1, length(gpla_wf.y))
     
     costs = get_turbine_cost.(eachcol(x_turbines))
-    s_avg = get_average_turbine_distances(x_turbines) / tlparams.turbine_diameter
-    profits = get_turbine_revenue.(ui_vals, σi_vals, costs, Ref(s_avg), Ref(N_samples), Ref(tlparams))
+    # s_avg = get_average_turbine_distances(x_turbines) / tlparams.turbine_diameter
+    profits = get_turbine_revenue.(ui_vals, σi_vals, Ref(N_samples), Ref(tlparams)) .- costs
 
     result = sum(profits) - penalty_cost * sum(is_solution_separated_Int(x_turbines, tlparams))    # Penalty added for solutions within seperated regions.
     return Int(round(result))
@@ -296,7 +296,7 @@ function get_ground_truth_profit(states_history::AbstractArray, tlparams::Turbin
     # return sum(expected_turbine_profits)
 end
 
-function get_ground_truth_profit(s0::WindFarmState, x_sensors::AbstractArray, tlparams::TurbineLayoutParams, wfparams::WindFieldBeliefParams, layouttype::TurbineLayoutType)
+function get_ground_truth_profit(s0::WindFarmState, x_sensors::AbstractArray, tlparams::TurbineLayoutParams, wfparams::WindFieldBeliefParams, layouttype::TurbineLayoutType; return_x_turbines = false)
 """ Calculate approximate profit of a turbine layout using ground truth, from initial state and solution found. Called after non-sequential solvers. """
 
     # Re-seed to ascertain the same randomness among all scripts.
@@ -321,7 +321,12 @@ function get_ground_truth_profit(s0::WindFarmState, x_sensors::AbstractArray, tl
     expected_turbine_profits = turbine_ground_profits(x_turbines, x_obs_full, y_obs_full, gpla_wf, tlparams)
 
     total_profit = sum(expected_turbine_profits) - sum(cost_masts)
-    return total_profit
+
+    if return_x_turbines
+        return total_profit, x_turbines
+    else
+        return total_profit
+    end
     # return sum(expected_turbine_profits)
 end
 
@@ -355,7 +360,7 @@ function get_turbine_revenue_v0(ui, σi, turbine_cost, s_avg, N_samples, tlparam
     return LCB^3
 end
 
-function get_turbine_revenue(ui, σi, turbine_cost, s_avg, N_samples, tlparams)
+function get_turbine_revenue(ui, σi, N_samples, tlparams)
 """ Returns the revenue of a single turbine. """
     z_value = 1.645    # chosen: 90 percent confidence interval
     LCB = ui - z_value / sqrt(N_samples) * σi
@@ -367,9 +372,9 @@ function get_turbine_revenue(ui, σi, turbine_cost, s_avg, N_samples, tlparams)
     power_created = get_turbine_power_output(LCB, tlparams) # [kW]
     power_created = power_created / 1.0e3                   # [MW]
 
-    cost_of_energy = 15                 # [USD/MWh]
-    turbine_lifetime = 30               # [years]
-    hours_in_one_year = 24 * 365        # [hours]
+    cost_of_energy = 30                 # [USD/MWh]
+    turbine_lifetime = 20               # [years]
+    hours_in_one_year = 24 * 365        # [hours/year]
 
     revenue_of_turbine = cost_of_energy * (turbine_lifetime * hours_in_one_year) * power_created   # [USD]
     return revenue_of_turbine

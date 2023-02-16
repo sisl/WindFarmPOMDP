@@ -14,7 +14,7 @@ CMD_ARGS = parse_commandline()
 time_taken = @elapsed begin
 
 # Wind Field Belief Parameters
-wfparams = WindFieldBeliefParams(noise_seed = CMD_ARGS[:noise_seed])
+wfparams = WindFieldBeliefParams(farm=CMD_ARGS[:farm], noise_seed = CMD_ARGS[:noise_seed])
 
 # Turbine Layout Heuristic Parameters
 tlparams = TurbineLayoutParams(CMD_ARGS[:layoutfinder])
@@ -41,4 +41,4 @@ end    # time_taken
 
 # Save results
 @show round(time_taken; digits=3)
-writedlm_append(CMD_ARGS[:savename], hcat(CMD_ARGS[:solvermethod], CMD_ARGS[:layoutfinder], CMD_ARGS[:actpolicy], CMD_ARGS[:tree_queries], CMD_ARGS[:sensors], size(soln, 2), round(time_taken; digits=2), RR))
+writedlm_append(CMD_ARGS[:savename], hcat(CMD_ARGS[:solvermethod], CMD_ARGS[:layoutfinder], CMD_ARGS[:noise_seed], CMD_ARGS[:actpolicy], CMD_ARGS[:tree_queries], CMD_ARGS[:sensors], size(soln, 2), round(time_taken; digits=2), RR))

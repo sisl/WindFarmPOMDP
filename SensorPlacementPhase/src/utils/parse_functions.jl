@@ -5,6 +5,11 @@ function parse_commandline()
     s = ArgParseSettings()
 
     @add_arg_table! s begin
+        "--farm", "-M"
+            help = "Name of farm to be used."
+            arg_type = String
+            required = true
+
         "--solvermethod", "-S"
             help = "Solver method for sensor placements."
             range_tester = (x -> x ∈ ["pomcpow", "greedy", "grdynonseq", "random", "entropy", "mutualinfo", "diffentro"])
@@ -64,10 +69,10 @@ macro show_args(parsed_args)
     return :( show_args($parsed_args) )
 end
 
-replicate_args(;solvermethod = "mutualinfo",
+replicate_args(;solvermethod = "pomcpow",
                 sensors = 5,
                 layoutfinder = "greedy", 
-                noise_seed = 1,
+                noise_seed = 12,
                 actpolicy = "UCB",
                 tree_queries = 2000,
                 savename = nothing) =  Dict(:solvermethod => Symbol(solvermethod),
@@ -100,7 +105,10 @@ function show_results_as_dataframe(csv_filenames; normalizer_rewards = 1.0)  # n
         
         solvername = parsed_data[1,1]
         layouttype = parsed_data[1,2]
-        params = parsed_data[1,2:end-2]
+        seed_no = parsed_data[1,3]
+        params = parsed_data[1,4:end-3]
+        push!(params, mean(parsed_data[1:end, end-2]))
+        # @show parsed_data[1:end,3:end-2]
         
         times_taken = parsed_data[:, end-1]
         rewards = parsed_data[:, end] / normalizer_rewards

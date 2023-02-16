@@ -103,22 +103,28 @@ function initialize_belief_perfect(wfparams::WindFieldBeliefParams; is_sparse=fa
     return WindFarmBelief(x_acts, gpla_wf)
 end
 
-function initialize_belief_noisy(wfparams::WindFieldBeliefParams, windNoise::Number)
+function initialize_belief_noisy(wfparams::WindFieldBeliefParams; is_sparse=false)
+
+    if is_sparse    # initial belief knowledge has no noise, but is sparse.
+        grid_dist_obs = wfparams.grid_dist_obs
+    else            # initial belief knowledge has no noise, and is the entire field.
+        grid_dist_obs = wfparams.grid_dist
+    end
 
     # Load prior points for belief GP
     Map = get_3D_data(wfparams.farm; altitudes=wfparams.altitudes)
-    X_obs, _ = get_dataset(Map, wfparams.altitudes, wfparams.grid_dist, wfparams.grid_dist, 1, wfparams.nx, 1, wfparams.ny)
+    X_obs, _ = get_dataset(Map, wfparams.altitudes, grid_dist_obs, wfparams.grid_dist, 1, wfparams.nx+1, 1, wfparams.ny+1)
+    Y_obs = map(lambda -> get_Y_from_farm_location(lambda, Map, wfparams.grid_dist), collect(eachcol(X_obs)))
 
-    # Additional noise is added to prior observations
-    noise = Distributions.Uniform(-windNoise, +windNoise)
-    Y_obs = map(lambda -> get_Y_from_farm_location(lambda, Map, wfparams.grid_dist) + rand(noise), collect(eachcol(X_obs)))
+    # Add noise to the values of the Mean function
+    Random.seed!(wfparams.noise_seed)
+    add_gauss!(Y_obs, 0.3)
+    clamp!(Y_obs, 0, Inf)
 
     # Create initial kernel
     kernel = WLK_SEIso(eps(), eps(), eps(), eps(), eps(), eps())
     gpla_wf = GPLA(X_obs, Y_obs, wfparams.num_neighbors, 0, 0, MeanConst(wfparams.theta[2]), kernel, wfparams.theta[1])
     GaussianProcesses.set_params!(gpla_wf, wfparams.theta)
-
-    gpla_wf.logNoise.value = log(windNoise)
 
     x_acts = reshape(Float64[],3,0)
     return WindFarmBelief(x_acts, gpla_wf)

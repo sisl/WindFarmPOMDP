@@ -7,24 +7,32 @@
     populationSize = 6000
     crossoverRate = 0.8
     mutationRate = 0.05
+    init_layout = nothing
 end
 
 
 function get_turbine_layout(gpla_wf::GPLA, tlparams::TurbineLayoutParams, wfparams::WindFieldBeliefParams, layouttype::GeneticTurbineLayout)
     
-    greedy_layout, _ = get_turbine_layout(gpla_wf, tlparams, wfparams, GreedyTurbineLayout())
+    if isnothing(layouttype.init_layout)
+        layouttype.init_layout, _ = get_turbine_layout(gpla_wf, tlparams, wfparams, GreedyTurbineLayout())    # initial layout
+    end
+
+    
     no_of_turbines = tlparams.no_of_turbines
     X_field = CartIndices_to_Array(turbine_action_space(tlparams, wfparams))
     size_X_field = size(X_field, 2)
+    kdtree = NearestNeighbors.KDTree(X_field)
     
-    function init_locs()
-        # _, loc = get_random_init_solution(X_field, no_of_turbines, tlparams)
-
-        kdtree = NearestNeighbors.KDTree(X_field)
-        knn_results = knn.(Ref(kdtree), eachcol(greedy_layout), Ref(10))
-        nn = getindex.(knn_results, Ref(1))
-
-        return rand.(nn)
+    function init_locs(randomize=false, randomize_nn = 10)
+        if randomize
+            knn_results = knn.(Ref(kdtree), eachcol(layouttype.init_layout), Ref(randomize_nn))
+            nn = getindex.(knn_results, Ref(1))
+            return rand.(nn)
+        else
+            knn_results = knn.(Ref(kdtree), eachcol(layouttype.init_layout), Ref(1))
+            nn = getindex.(knn_results, Ref(1))
+            return rand.(nn)   # deterministic here, no randomization.
+        end
     end
 
     function cons(locs, X_field)
@@ -32,10 +40,16 @@ function get_turbine_layout(gpla_wf::GPLA, tlparams::TurbineLayoutParams, wfpara
         return [ sum(is_solution_separated_Int(x_turbines, tlparams)) ]
     end
     
-    function mutation_func!(x)
+    function mutation_func_old!(x)
         x[:] = rand(1:size_X_field, no_of_turbines)
     end
 
+    function mutation_func!(x, randomize_nn = 10)
+        current_x = X_field[:, x]
+        knn_results = knn.(Ref(kdtree), eachcol(current_x), Ref(randomize_nn))
+        nn = getindex.(knn_results, Ref(1))
+        x[:] = rand.(nn)
+    end
 
     lx = fill(1, no_of_turbines)
     ux = fill(size_X_field, no_of_turbines)
